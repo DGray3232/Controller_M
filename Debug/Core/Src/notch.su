@@ -1,0 +1,2 @@
+../Core/Src/notch.c:15:6:init_notch_filter	48	static
+../Core/Src/notch.c:36:7:apply_notch_filter	24	static

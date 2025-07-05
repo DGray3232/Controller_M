@@ -1,0 +1,2 @@
+../Core/Src/hpf_filter.c:16:6:HPF_Init	24	static
+../Core/Src/hpf_filter.c:27:7:HPF_Update	24	static

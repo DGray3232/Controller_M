@@ -1,0 +1,17 @@
+#include "kalman.h"
+
+// Функция инициализации фильтра Калмана
+void kalman_filter_init(KalmanFilter *kf, float q, float r, float initial_state_uncertainty, float state) {
+    kf->x_est = state;
+    kf->P_est = initial_state_uncertainty;
+    kf->Q = q;
+    kf->R = r;
+}
+// Функция обновления фильтра Калмана
+float kalman_filter_update(KalmanFilter *kf, float measurement) {
+    float P_pred = kf->P_est + kf->Q;
+    float K = P_pred / (P_pred + kf->R);
+    kf->x_est = kf->x_est + K * (measurement - kf->x_est);
+    kf->P_est = (1.0f - K) * P_pred;
+    return kf->x_est;
+}

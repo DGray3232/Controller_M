@@ -1,0 +1,17 @@
+#include "hpf_filter.h"
+
+
+// инициализация ФВЧ
+void HPF_Init(HPF *filter, float alpha, float initial_value) {
+    filter->alpha = alpha;
+    filter->prev_x = initial_value;
+    filter->prev_y = initial_value;
+}
+// Вычисление отфильтрованного значения
+float HPF_Update(HPF *filter, float new_x) {
+    float filtered = filter->alpha * filter->prev_y +
+                     filter->alpha * (new_x - filter->prev_x);
+    filter->prev_x = new_x;
+    filter->prev_y = filtered;
+    return filtered;
+}
