@@ -1,3 +1,5 @@
+#ifndef BMX055_H
+#define BMX055_H
 
 #include <stdint.h>
 #include "i2c.h"
@@ -26,6 +28,14 @@ typedef struct
     float Temperature_mag;
 } BMX055_t;
 
+// флаги состояния для I2C машины состояний
+typedef enum {
+    IMU_IDLE = 0,
+    IMU_READING_ACCEL,
+    IMU_READING_GYRO,
+    IMU_DATA_READY
+} IMU_State_t;
+
 extern volatile uint8_t CurrentFunction; // Объявление переменной
 
 uint8_t BMX055_BMA_Init(I2C_HandleTypeDef *I2Cx);
@@ -48,11 +58,18 @@ void setFastOffset_BMM(I2C_HandleTypeDef *I2Cx, uint8_t r);
 
 void BMX055_Read_Mag(I2C_HandleTypeDef *I2Cx, BMX055_t *DataStruct);
 
-void BMX055_Read_Accel_DMA(I2C_HandleTypeDef *I2Cx, uint8_t *data);
+//void BMX055_Read_Accel_DMA(I2C_HandleTypeDef *I2Cx, uint8_t *data);
 
 
-void BMX055_Read_Gyro_DMA(I2C_HandleTypeDef *I2Cx, uint8_t *data);
+//void BMX055_Read_Gyro_DMA(I2C_HandleTypeDef *I2Cx, uint8_t *data);
 
 void BMX055_Read_Mag_DMA(I2C_HandleTypeDef *I2Cx, float *data[4]);
 void readADC_dma(I2C_HandleTypeDef *I2Cx);
 
+void BMX055_Process_Accel_Raw(BMX055_t *DataStruct, uint8_t *buffer);
+void BMX055_Process_Gyro_Raw(BMX055_t *DataStruct, uint8_t *buffer);
+
+HAL_StatusTypeDef BMX055_Read_Gyro_DMA(I2C_HandleTypeDef *I2Cx, uint8_t *data);
+HAL_StatusTypeDef BMX055_Read_Accel_DMA(I2C_HandleTypeDef *I2Cx, uint8_t *data);
+
+#endif

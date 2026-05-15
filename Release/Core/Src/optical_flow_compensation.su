@@ -1,0 +1,7 @@
+../Core/Src/optical_flow_compensation.c:17:6:gyro_integration_update	16	static
+../Core/Src/optical_flow_compensation.c:53:6:calculate_linear_velocity	0	static
+../Core/Src/optical_flow_compensation.c:92:6:compensate_rotation_for_optical_flow	24	static
+../Core/Src/optical_flow_compensation.c:158:6:should_process_optical_flow	0	static
+../Core/Src/optical_flow_compensation.c:173:6:gyro_integration_reset	0	static
+../Core/Src/optical_flow_compensation.c:124:6:process_optical_flow_data	32	static
+../Core/Src/optical_flow_compensation.c:186:6:optical_flow_results_init	0	static

@@ -1,2 +1,11 @@
-../Core/Src/pid.c:19:6:PID_Init	72	static
-../Core/Src/pid.c:46:8:PID_Compute	120	static
+../Core/Src/pid.c:19:6:PID_Init	40	static
+../Core/Src/pid.c:46:7:PID_Compute	40	static
+../Core/Src/pid.c:91:6:P_Init	24	static
+../Core/Src/pid.c:108:7:P_Compute	32	static
+../Core/Src/pid.c:137:6:PID_2_Reset	16	static
+../Core/Src/pid.c:150:6:PID_2_Update_PID	24	static
+../Core/Src/pid.c:168:6:PID_2_Init	40	static
+../Core/Src/pid.c:196:7:PID_2_Compute	48	static
+../Core/Src/pid.c:237:6:PID_DoM_Init	40	static
+../Core/Src/pid.c:254:6:PID_DoM_Reset	16	static
+../Core/Src/pid.c:266:7:PID_DoM_Compute	48	static

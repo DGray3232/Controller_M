@@ -26,6 +26,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "remote_control.h"
+#include "remote_control_mavlink.h"
+#include "config_param.h"
+#include "globals.h"
 #include "arm_math.h"
 #include "limits.h"
 #include "arm_const_structs.h"  // Для предопределенных структур БПФ
@@ -34,88 +38,25 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
-#include "bmx055.h"
-#include "AHRSAlgorithms.h"
-#include "kalman.h"
-#include "notch.h"
-#include "hpf_filter.h"
-#include "pid.h"
-
-/* USER CODE END Includes */
+#include "calculate_notch_coeffs.h"
+#include "vibration_analysis.h"
+#include "optical_flow_compensation.h"
+ /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
 void normalizeQuaternion(float q[4]);
-
+int constrain(int value, int min_val, int max_val);
+void micolink_decode(uint8_t data, uint32_t* distance, uint8_t* distance_strength,
+                     uint8_t* distance_precision, uint8_t* distance_status,
+                     int16_t* flow_velocity_x, int16_t* flow_velocity_y,
+                     uint8_t* flow_quality, uint8_t* flow_status);
+void uart6_transmit_dma_with_rx_pause(uint8_t* data, uint16_t size);
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-#define DEG_TO_RAD  0.017453292519943295769236907684886
-#define RAD_TO_DEG (180.0f / M_PI)
-
-#define NUM_STAGES 1 // Для 2-го порядка фильтра
-#define BLOCK_SIZE 1 // Размер блока данных для обработки
-
-// Параметры протокола Multishot
-#define MULTISHOT_MIN 500      // Минимальная длительность импульса (мкс)
-#define MULTISHOT_MAX 2500     // Максимальная длительность импульса (мкс)
-
-#define CONTROL_LOOP_DT 0.001f // 1000 Гц
-
-#define DATA_SIZE             12
-#define CONNECTION_TIMEOUT_MS 500    // Таймаут потери связи (мс)
-#define MIN_PULSE_WIDTH       500    // Минимальная ширина импульса
-#define MAX_PULSE_WIDTH       2500   // Максимальная ширина импульса
-#define MAX_CORRECTION        500    //Ограничение пид-коррекции
-#define MAX_PID               1500   //Ограничение пид-сигнала
-
-#define TRIM_ROLL_ERROR  0.0f
-#define TRIM_PITCH_ERROR 0.0f
-#define TRIM_YAW_ERROR   0.0f
-
-#define TRIM_FRONT_LEFT  25
-#define TRIM_FRONT_RIGHT -5
-#define TRIM_REAR_LEFT   55
-#define TRIM_REAR_RIGHT  5
-
-// Параметры фильтра Калмана
-#define GYRO_PROCESS_NOISE      0.0005f
-#define GYRO_MEASUREMENT_NOISE  0.5f
-#define GYRO_ESTIMATION_ERROR   0.1f
-#define GYRO_INITIAL_VALUE      0.0f
-
-#define ACCEL_PROCESS_NOISE     0.1f
-#define ACCEL_MEASUREMENT_NOISE 1.0f
-#define ACCEL_ESTIMATION_ERROR  1.0f
-#define ACCEL_INITIAL_VALUE     0.0f
-#define ACCEL_Z_INITIAL_VALUE   1.0f  // для гравитации
-
-//  Параметры режекторного фильтра
-#define NOTCH_CENTER_FREQ       70.0f
-#define NOTCH_WIDTH             10.0f
-#define NOTCH_SAMPLE_RATE       1000.0f
-#define ATTITUDE_NOTCH_WIDTH    5.0f
-
-// Параметры П�?Д-регулятора
-#define PITCH_PID_KP          350.0
-#define PITCH_PID_KI          1.0
-#define PITCH_PID_KD          55.0
-#define ROLL_PID_KP           365.0
-#define ROLL_PID_KI           1.0
-#define ROLL_PID_KD           55.0
-#define YAW_PID_KP            1000.0
-#define YAW_PID_KI            1.0
-#define YAW_PID_KD            200.0
-#define ALPHA                 1.0
-#define ALPHA_DERIVATIVE      0.1
-#define INTEGRAL_LIMIT        10.0
-#define SCALE_FACTOR          1.0
-
-// Параметры фильтра верхних частот
-#define HPF_ALPHA             0.99999
 
 /* USER CODE END PD */
 
@@ -128,40 +69,6 @@ void normalizeQuaternion(float q[4]);
 
 /* USER CODE BEGIN PV */
 
-BMX055_t BMX055;
-
-KalmanFilter gyro_filter_x;
-KalmanFilter gyro_filter_y;
-KalmanFilter gyro_filter_z;
-
-KalmanFilter accel_filter_x;
-KalmanFilter accel_filter_y;
-KalmanFilter accel_filter_z;
-
-NotchFilter notch_ax, notch_ay, notch_az;
-NotchFilter notch_gx, notch_gy, notch_gz;
-NotchFilter notch_roll, notch_pitch, notch_yaw;
-
-HPF hpf_x;
-HPF hpf_y;
-HPF hpf_z;
-
-PID_Controller pitch_pid;
-PID_Controller roll_pid;
-PID_Controller yaw_pid;
-
-arm_biquad_cascade_df2T_instance_f32 lpf_Gx; // Экземпляр фильтра
-arm_biquad_cascade_df2T_instance_f32 lpf_Gy;
-arm_biquad_cascade_df2T_instance_f32 lpf_Gz;
-
-arm_biquad_cascade_df2T_instance_f32 lpf_Ax; // Экземпляр фильтра
-arm_biquad_cascade_df2T_instance_f32 lpf_Ay;
-arm_biquad_cascade_df2T_instance_f32 lpf_Az;
-
-arm_biquad_cascade_df2T_instance_f32 lpf_Errorx; // Экземпляр фильтра
-arm_biquad_cascade_df2T_instance_f32 lpf_Errory;
-arm_biquad_cascade_df2T_instance_f32 lpf_Errorz;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -173,156 +80,158 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-char buf[250]; // буффер для отладки
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Функция для добавления значения в кольцевой буфер x
+void add_to_x(float32_t value) {
+	Ax_fft[x_index] = value;
+    x_index = (x_index + 1) % FFT_LEN;
+}
+// Функция для добавления значения в кольцевой буфер y
+void add_to_y(float32_t value) {
+	Ay_fft[y_index] = value;
+    y_index = (y_index + 1) % FFT_LEN;
+}
+// Функция для добавления значения в кольцевой буфер z
+void add_to_z(float32_t value) {
+	Az_fft[z_index] = value;
+    z_index = (z_index + 1) % FFT_LEN;
+}
 
-int joystick_x = 0;
-int joystick_y = 0;
-int potentiometer_value = 0;// общий газ
-int right_left = 0;
-int button = 0;
-int received_checksum, calculated_checksum = 0;
-uint8_t buffer_message[DATA_SIZE] = {0}; // беффер для приема типа и сообщения
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint32_t last_received_time = 0;
-bool connection_lost = false;
+///////////////////////////////////////////////Обновление коэффициенты для режекторного фильтра////////////////////////////////////////////////////
 
-float32_t Ax[1] = {0}; // акселерометр g
-float32_t Ay[1] = {0};
-float32_t Az[1] = {0};
-float32_t filter_Ax[1] = {0};
-float32_t filter_Ay[1] = {0};
-float32_t filter_Az[1] = {0};
-float32_t offset_Ax = {0};
-float32_t offset_Ay = {0};
-float32_t offset_Az = {0};
+void update_coeff() {
+		 vibration_frequency_x = calculate_vibration_frequency(Ax_fft, FFT_LEN, F_SAMPLE, fft_output_buffer, fft_magnitude_buffer);
+    	 if (vibration_frequency_x == 0) {
+    		 calculateNotchFilterCoeffs(1000, 0, 5, Coeffs_notch_x, 1.0);
+    	 }
+    	 if (fabs(vibration_frequency_x - previous_freq_x) > FREQ_HYSTERESIS) {
+    	     calculateNotchFilterCoeffs(1000, vibration_frequency_x, 5, Coeffs_notch_x, 0.9f);
+    	     previous_freq_x = vibration_frequency_x;
+    	     memset(filterState_Gx_notch, 0, sizeof(filterState_Gx_notch));
+    	     memset(filterState_Ax_notch, 0, sizeof(filterState_Ax_notch));
+    	     arm_biquad_cascade_df2T_init_f32(&imu_Gx_notch, NUM_STAGES_GYRO_NOTCH, Coeffs_notch_x, filterState_Gx_notch);
+    	     arm_biquad_cascade_df2T_init_f32(&imu_Ax_notch, NUM_STAGES_ACCEL_NOTCH, Coeffs_notch_x, filterState_Ax_notch);
+    	 }
+    	 vibration_frequency_y = calculate_vibration_frequency(Ay_fft, FFT_LEN, F_SAMPLE, fft_output_buffer, fft_magnitude_buffer);
+   	 if (vibration_frequency_y == 0) {
+   		 calculateNotchFilterCoeffs(1000, 0, 5, Coeffs_notch_y, 1.0);
+   	 }
+	 if (fabs(vibration_frequency_y - previous_freq_y) > FREQ_HYSTERESIS) {
+	     calculateNotchFilterCoeffs(1000, vibration_frequency_y, 5, Coeffs_notch_y, 0.9f);
+	     previous_freq_y = vibration_frequency_y;
+	     memset(filterState_Gy_notch, 0, sizeof(filterState_Gy_notch));
+	     memset(filterState_Ay_notch, 0, sizeof(filterState_Ay_notch));
+	     arm_biquad_cascade_df2T_init_f32(&imu_Gy_notch, NUM_STAGES_GYRO_NOTCH, Coeffs_notch_y, filterState_Gy_notch);
+	     arm_biquad_cascade_df2T_init_f32(&imu_Ay_notch, NUM_STAGES_ACCEL_NOTCH, Coeffs_notch_y, filterState_Ay_notch);
+	 }
+	 vibration_frequency_z = calculate_vibration_frequency(Az_fft, FFT_LEN, F_SAMPLE, fft_output_buffer, fft_magnitude_buffer);
+      	 if (vibration_frequency_z == 0) {
+      		 calculateNotchFilterCoeffs(1000, 0, 5, Coeffs_notch_z, 1.0);
+      	 }
+    	 if (fabs(vibration_frequency_z - previous_freq_z) > FREQ_HYSTERESIS) {
+    	     calculateNotchFilterCoeffs(1000, vibration_frequency_z, 5, Coeffs_notch_z, 0.9f);
+    	     previous_freq_z = vibration_frequency_z;
+    	     memset(filterState_Gz_notch, 0, sizeof(filterState_Gz_notch));
+    	     memset(filterState_Az_notch, 0, sizeof(filterState_Az_notch));
+    	     arm_biquad_cascade_df2T_init_f32(&imu_Gz_notch, NUM_STAGES_GYRO_NOTCH, Coeffs_notch_z, filterState_Gz_notch);
+    	     arm_biquad_cascade_df2T_init_f32(&imu_Az_notch, NUM_STAGES_ACCEL_NOTCH, Coeffs_notch_z, filterState_Az_notch);
+    	 }
+    	count_calculate_frequency = 0;
+    	count_calculate_frequency_flag = 0;
+}
 
-float32_t Gx[1] = {0}; // гироскоп в градусах в секунду
-float32_t Gy[1] = {0};
-float32_t Gz[1] = {0};
-float32_t bias_Gx = {0};
-float32_t bias_Gy = {0};
-float32_t bias_Gz = {0};
-float32_t filter_Gx[1] = {0};
-float32_t filter_Gy[1] = {0};
-float32_t filter_Gz[1] = {0};
-
-float32_t temp_x[1] = {0};
-float32_t temp_y[1] = {0};
-float32_t temp_z[1] = {0};
-float32_t temp_forse_pitch[1] = {0};
-float32_t temp_forse_roll[1] = {0};
-float32_t temp_forse_yaw[1] = {0};
-
-int forse_pitch = 0;
-int forse_roll = 0;
-int forse_yaw = 0;
-
-float temp = 0.0f; // температура
-float pitch = 0.0f, yaw = 0.0f, roll = 0.0f;
-float roll_comp = 0.0f;   // Угол крена (вращение вокруг оси X)
-float pitch_comp = 0.0f;  // Угол тангажа (вращение вокруг оси Y)
-float Quat_actual[4] = {0}; // кватернион
-float Quat_target[4] = {0}; // целевой кватернион
-float Quat_actual_inv[4] = {0}; // инвертированный результирующий кватернион
-float Quat_error[4] = {0}; // кватернион ошибок
-float Quat_previous[4] = {0};
-
-// Состояния фильтра
-static float32_t filterState_lpf_Gx[NUM_STAGES * 4] = {0};
-static float32_t filterState_lpf_Gy[NUM_STAGES * 4] = {0};
-static float32_t filterState_lpf_Gz[NUM_STAGES * 4] = {0};
-
-static float32_t filterState_lpf_Ax[NUM_STAGES * 4] = {0};
-static float32_t filterState_lpf_Ay[NUM_STAGES * 4] = {0};
-static float32_t filterState_lpf_Az[NUM_STAGES * 4] = {0};
-
-static float32_t filterState_lpf_Errorx[NUM_STAGES * 4] = {0};
-static float32_t filterState_lpf_Errory[NUM_STAGES * 4] = {0};
-static float32_t filterState_lpf_Errorz[NUM_STAGES * 4] = {0};
-
-static float32_t Coeffs_lpf_accel[NUM_STAGES * 5] = {0.04613180, 0.09226360, 0.04613180, 1.30728503, -0.49181224};
-static float32_t Coeffs_lpf_Error[NUM_STAGES * 5] = {0.04613180, 0.09226360, 0.04613180, 1.30728503, -0.49181224};
-static float32_t Coeffs_lpf[NUM_STAGES * 5] = {0.04613180, 0.09226360, 0.04613180, 1.30728503, -0.49181224};
-
-uint32_t last_time = 0;
-float freq = 0;
-
-double errorpitch = 0;
-double errorroll = 0;
-double erroryaw = 0;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////Multishot/////////////////////////////////////////////////////////////////////////////////
 
-void Multishot_SetThrottle(uint16_t throttle, uint32_t channel)
+/**
+  * @brief  Устанавливает значение тяги для всех моторов.
+  * @param  m1, m2, m3, m4 Значения тяги в микросекундах (мкс) для моторов 1-4.
+  *         Должны быть в диапазоне [MIN_PULSE_WIDTH, MAX_PULSE_WIDTH] (500-2500 мкс)
+  * @retval None
+  * @note   Функция просто записывает новые значения в глобальные буферы.
+  *         DMA автоматически, в фоновом режиме, перенесет эти значения в таймер.
+  */
+void Motors_Set_Throttle(uint16_t m1, uint16_t m2, uint16_t m3, uint16_t m4)
 {
-  uint32_t M_pwm_data[1] = {0};
-  M_pwm_data[0] = throttle;
-  HAL_TIM_PWM_Stop_DMA(&htim1, channel);
-  HAL_TIM_PWM_Start_DMA(&htim1, channel, M_pwm_data, 1);
+  // Записываем новые значения напрямую в буферы, которые уже читаются DMA.
+  // Ограничиваем значения.
+  m1_pulse[0] = constrain(m1, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+  m2_pulse[0] = constrain(m2, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+  m3_pulse[0] = constrain(m3, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+  m4_pulse[0] = constrain(m4, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////// прием команд с пульта ////////////////////////////////////////////////////////////////////////////
-void receive_and_parse_data(int data_size) {
-    calculated_checksum = 0;
-    // Проверяем минимальный размер данных (2 байта данных + 2 байта контрольной суммы)
-    if (data_size < 4) {
-        return; // Недостаточно данных для разбора
-    }
-    // Вычисляем контрольную сумму (все байты, кроме последних двух)
-    for (uint8_t i = 0; i < data_size - 2; i++) {
-        calculated_checksum += buffer_message[i];
-    }
-    // Получаем контрольную сумму из последних двух байтов
-    received_checksum = (buffer_message[data_size - 2] << 8) | buffer_message[data_size - 1];
-    // Если контрольная сумма совпадает, разбираем данные
-    if (received_checksum == calculated_checksum) {
-        // Обновляем время последнего успешного получения данных
-        last_received_time = HAL_GetTick();
-        connection_lost = false;
-        // Данные начинаются с начала буфера (без заголовков типа и размера)
-        joystick_x = (int16_t)((buffer_message[0] << 8) | buffer_message[1]);
-        joystick_y = (int16_t)((buffer_message[2] << 8) | buffer_message[3]);
-        potentiometer_value = (buffer_message[4] << 8) | buffer_message[5];
-        right_left = (int16_t)((buffer_message[6] << 8) | buffer_message[7]);
-        button = (buffer_message[8] << 8) | buffer_message[9];
-    }
+//////////////////////////////////////////////////////////////////////////�?нициализация DMA/////////////////////////////////////////////////////////////////////////////////
+/**
+  * @brief  �?нициализация DMA для работы с моторами в циклическом режиме.
+  * @note   Настраивает DMA для непрерывной передачи данных из буферов mX_pulse
+  *         в регистры сравнения таймера TIM1. Вызывается один раз при старте.
+  * @retval None
+  */
+void Motors_DMA_Init(void)
+{
+  // Останавливаем DMA
+  HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_4);
+  // Запускаем DMA в циклицеском режиме для каждого канала.
+  // Теперь DMA будет бесконечно отправлять значения из буферов mX_pulse
+  // на соответствующие регистры CCR таймера.
+  HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t*)&m1_pulse, 1);
+  HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_2, (uint32_t*)&m2_pulse, 1);
+  HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_3, (uint32_t*)&m3_pulse, 1);
+  HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_4, (uint32_t*)&m4_pulse, 1);
 }
-
-//функция для проверки потери связи
-void check_connection_loss(void) {
-    uint32_t current_time = HAL_GetTick();
-    // Если прошло больше таймаута с последнего получения данных
-    if ((current_time - last_received_time) > CONNECTION_TIMEOUT_MS) {
-        connection_lost = true;
-        // Сбрасываем все управляющие сигналы
-        joystick_x = 0;
-        joystick_y = 0;
-        right_left = 0;
-        potentiometer_value = 0;
-        button = 0;
-        // Устанавливаем минимальные импульсы на моторах
-        Multishot_SetThrottle(MIN_PULSE_WIDTH, TIM_CHANNEL_1);
-        Multishot_SetThrottle(MIN_PULSE_WIDTH, TIM_CHANNEL_2);
-        Multishot_SetThrottle(MIN_PULSE_WIDTH, TIM_CHANNEL_3);
-        Multishot_SetThrottle(MIN_PULSE_WIDTH, TIM_CHANNEL_4);
-    }
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**
+  * @brief  Ограничивает значение с плавающей точкой заданными границами
+  * @param  value Значение для ограничения
+  * @param  min_val Минимально допустимое значение (нижняя граница)
+  * @param  max_val Максимально допустимое значение (верхняя граница)
+  * @retval Ограниченное значение:
+  *         - min_val, если value < min_val
+  *         - max_val, если value > max_val
+  *         - value, если в пределах границ
+  */
 float constrain_float(float value, float min_val, float max_val) {
     if (value < min_val) return min_val;
     if (value > max_val) return max_val;
     return value;
 }
+/**
+  * @brief  Ограничивает целочисленное значение заданными границами
+  * @param  value Значение для ограничения
+  * @param  min_val Минимально допустимое значение (нижняя граница)
+  * @param  max_val Максимально допустимое значение (верхняя граница)
+  * @retval Ограниченное значение:
+  *         - min_val, если value < min_val
+  *         - max_val, если value > max_val
+  *         - value, если в пределах границ
+  */
 int constrain(int value, int min_val, int max_val) {
     if (value < min_val) return min_val;
     if (value > max_val) return max_val;
     return value;
 }
-// Функция для проверки и ограничения значения PID
+/**
+  * @brief  Проверяет и ограничивает значение PID-регулятора
+  * @param  value Значение PID для проверки
+  * @param  max_pid_output Максимальное абсолютное значение выхода PID
+  *         Должно быть положительным числом
+  * @retval Безопасное значение PID:
+  *         - 0, если value выходит за пределы [-10000, 10000]
+  *         - Ограниченное значение в пределах [-max_pid_output, max_pid_output]
+  * @note   Функция обеспечивает защиту от переполнения и аномальных значений
+  */
 int safe_pid_value(int value, int max_pid_output) {
     if (value < -10000 || value > 10000) {
         return 0;
@@ -354,12 +263,12 @@ static float invSqrt(float x) {
 }
 void get_angle_mahony(void){
 
-	  float filterAx = filter_Ax[0]*9.81;
-	  float filterAy = filter_Ay[0]*9.81;
-	  float filterAz = filter_Az[0]*9.81;
-	  float filterGx = filter_Gx[0]*DEG_TO_RAD;
-	  float filterGy = filter_Gy[0]*DEG_TO_RAD;
-	  float filterGz = filter_Gz[0]*DEG_TO_RAD;
+	  float filterAx = filtered_Ax*9.81;
+	  float filterAy = filtered_Ay*9.81;
+	  float filterAz = filtered_Az*9.81;
+	  float filterGx = filtered_Gx*DEG_TO_RAD;
+	  float filterGy = filtered_Gy*DEG_TO_RAD;
+	  float filterGz = filtered_Gz*DEG_TO_RAD;
 
 	  filterAx = round_to(filterAx);
 	  filterAy = round_to(filterAy);
@@ -422,11 +331,6 @@ void get_angle_mahony(void){
 	  pitch *= RAD_TO_DEG;
 	  roll *= RAD_TO_DEG;
 	  yaw   *= RAD_TO_DEG;
-
-	  roll = apply_notch_filter(&notch_roll, roll);
-	  pitch = apply_notch_filter(&notch_pitch, pitch);
-	  yaw = apply_notch_filter(&notch_yaw, yaw);
-
 }
 // Функция для нормализации кватерниона
 void normalizeQuaternion(float q[4]) {
@@ -500,77 +404,154 @@ void quat_error(float  q_actual[4], float  q_actual_inv[4], float  q_target[4], 
 ////////////////////////////////////////////////////////////////// фильтрованные данные///////////////////////////////////////////////////////////////
 void get_filter_data_accel() {
 
-	BMX055_Read_Accel(&hi2c1, &BMX055);
-
-	//Ax[0] = BMX055.Ax;
-	Ax[0] = round_to(BMX055.Ax);
+	Ax[0] = BMX055.Ax;
 	Ax[0] = Ax[0] - offset_Ax;
-    Ax[0] = apply_notch_filter(&notch_ax, Ax[0]);
-    arm_biquad_cascade_df2T_f32 (&lpf_Ax, Ax, filter_Ax, BLOCK_SIZE);
-    filter_Ax[0] = kalman_filter_update(&accel_filter_x, filter_Ax[0]);
 
-    //Ay[0] = BMX055.Ay;
-    Ay[0] = round_to(BMX055.Ay);
+	Ax_for_fft[0] = Ax[0];
+	arm_biquad_cascade_df2T_f32 (&hpf_Ax, Ax_for_fft, filter_hpf_Ax_for_fft, BLOCK_SIZE);
+	arm_biquad_cascade_df2T_f32 (&lpf_Ax, filter_hpf_Ax_for_fft, filter_lpf_Ax_for_fft, BLOCK_SIZE);
+	filter_Ax_for_fft = filter_lpf_Ax_for_fft[0];
+	add_to_x(filter_Ax_for_fft);
+
+	Ax[0] = median_filter(Ax[0], &Accel_x);
+    arm_biquad_cascade_df2T_f32 (&imu_Ax_notch, Ax, filter_Ax_notch, BLOCK_SIZE);
+    arm_biquad_cascade_df2T_f32 (&imu_Ax_lpf, filter_Ax_notch, filter_Ax_lpf, BLOCK_SIZE);
+    filtered_Ax = filter_Ax_lpf[0];
+    if (isnan(filtered_Ax) || isinf(filtered_Ax)) {
+    	filtered_Ax = prev_filtered_Ax;
+    }
+    prev_filtered_Ax = filtered_Ax;
+
+    Ay[0] = BMX055.Ay;
 	Ay[0] = Ay[0] - offset_Ay;
-    Ay[0] = apply_notch_filter(&notch_ay, Ay[0]);
-   	arm_biquad_cascade_df2T_f32 (&lpf_Ay, Ay, filter_Ay, BLOCK_SIZE);
-   	filter_Ay[0] = kalman_filter_update(&accel_filter_y, filter_Ay[0]);
 
-   	//Az[0] = BMX055.Az;
-   	Az[0] = round_to(BMX055.Az);
+	Ay_for_fft[0] = Ay[0];
+	arm_biquad_cascade_df2T_f32 (&hpf_Ay, Ay_for_fft, filter_hpf_Ay_for_fft, BLOCK_SIZE);
+	arm_biquad_cascade_df2T_f32 (&lpf_Ay, filter_hpf_Ay_for_fft, filter_lpf_Ay_for_fft, BLOCK_SIZE);
+	filter_Ay_for_fft = filter_lpf_Ay_for_fft[0];
+	add_to_y(filter_Ay_for_fft);
+
+	Ay[0] = median_filter(Ay[0], &Accel_y);
+    arm_biquad_cascade_df2T_f32 (&imu_Ay_notch, Ay, filter_Ay_notch, BLOCK_SIZE);
+    arm_biquad_cascade_df2T_f32 (&imu_Ay_lpf, filter_Ay_notch, filter_Ay_lpf, BLOCK_SIZE);
+    filtered_Ay = filter_Ay_lpf[0];
+    if (isnan(filtered_Ay) || isinf(filtered_Ay)) {
+    	filtered_Ay = prev_filtered_Ay;
+    }
+    prev_filtered_Ay = filtered_Ay;
+
+   	Az[0] = BMX055.Az;
 	Az[0] = Az[0] - offset_Az;
-    Az[0] = apply_notch_filter(&notch_az, Az[0]);
-    arm_biquad_cascade_df2T_f32 (&lpf_Az, Az, filter_Az, BLOCK_SIZE);
-    filter_Az[0] = kalman_filter_update(&accel_filter_z, filter_Az[0]);
+
+	Az_for_fft[0] = Az[0];
+	arm_biquad_cascade_df2T_f32 (&hpf_Az, Az_for_fft, filter_hpf_Az_for_fft, BLOCK_SIZE);
+	arm_biquad_cascade_df2T_f32 (&lpf_Az, filter_hpf_Az_for_fft, filter_lpf_Az_for_fft, BLOCK_SIZE);
+	filter_Az_for_fft = filter_lpf_Az_for_fft[0];
+	add_to_z(filter_Az_for_fft);
+
+	Az[0] = median_filter(Az[0], &Accel_z);
+    arm_biquad_cascade_df2T_f32 (&imu_Az_notch, Az, filter_Az_notch, BLOCK_SIZE);
+    arm_biquad_cascade_df2T_f32 (&imu_Az_lpf, filter_Az_notch, filter_Az_lpf, BLOCK_SIZE);
+    filtered_Az = filter_Az_lpf[0];
+    if (isnan(filtered_Az) || isinf(filtered_Az)) {
+    	filtered_Az = prev_filtered_Az;
+    }
+    prev_filtered_Az = filtered_Az;
+
 }
+
 void get_filter_data_gyro() {
 
-	BMX055_Read_Gyro(&hi2c1, &BMX055);
-
-	//Gx[0] = BMX055.Gx;
-	Gx[0] = round_to(BMX055.Gx);
+	Gx[0] = BMX055.Gx;
 	Gx[0] = Gx[0] - bias_Gx;
-    Gx[0] = apply_notch_filter(&notch_gx, Gx[0]);
-	Gx[0] = HPF_Update(&hpf_x, Gx[0]);
-    arm_biquad_cascade_df2T_f32 (&lpf_Gx, Gx, filter_Gx, BLOCK_SIZE);
-    filter_Gx[0] = kalman_filter_update(&gyro_filter_x, filter_Gx[0]);
 
-    //Gy[0] = BMX055.Gy;
-    Gy[0] = round_to(BMX055.Gy);
+	arm_biquad_cascade_df2T_f32 (&imu_Gx_D_lpf, Gx, filter_Gx_D_lpf, BLOCK_SIZE);
+	filtered_Gx_D = filter_Gx_D_lpf[0];
+
+	Gx[0] = median_filter(Gx[0], &Gyro_x);
+	arm_biquad_cascade_df2T_f32 (&imu_Gx_notch, Gx, filter_Gx_notch, BLOCK_SIZE);
+	arm_biquad_cascade_df2T_f32 (&imu_Gx_lpf, filter_Gx_notch, filter_Gx_lpf, BLOCK_SIZE);
+    filtered_Gx = filter_Gx_lpf[0];
+    if (isnan(filtered_Gx) || isinf(filtered_Gx)) {
+    	filtered_Gx = prev_filtered_Gx;
+    }
+    prev_filtered_Gx = filtered_Gx;
+
+    Gy[0] = BMX055.Gy;
 	Gy[0] = Gy[0] - bias_Gy;
-    Gy[0] = apply_notch_filter(&notch_gy, Gy[0]);
-	Gy[0] = HPF_Update(&hpf_y, Gy[0]);
-   	arm_biquad_cascade_df2T_f32 (&lpf_Gy, Gy, filter_Gy, BLOCK_SIZE);
-   	filter_Gy[0] = kalman_filter_update(&gyro_filter_y, filter_Gy[0]);
 
-   	//Gz[0] = BMX055.Gz;
-   	Gz[0] = round_to(BMX055.Gz);
+	arm_biquad_cascade_df2T_f32 (&imu_Gy_D_lpf, Gy, filter_Gy_D_lpf, BLOCK_SIZE);
+	filtered_Gy_D = filter_Gy_D_lpf[0];
+
+	Gy[0] = median_filter(Gy[0], &Gyro_y);
+	arm_biquad_cascade_df2T_f32 (&imu_Gy_notch, Gy, filter_Gy_notch, BLOCK_SIZE);
+	arm_biquad_cascade_df2T_f32 (&imu_Gy_lpf, filter_Gy_notch, filter_Gy_lpf, BLOCK_SIZE);
+   	filtered_Gy = filter_Gy_lpf[0];
+    if (isnan(filtered_Gy) || isinf(filtered_Gy)) {
+    	filtered_Gy = prev_filtered_Gy;
+    }
+    prev_filtered_Gy = filtered_Gy;
+
+   	Gz[0] = BMX055.Gz;
     Gz[0] = Gz[0] - bias_Gz;
-    Gz[0] = apply_notch_filter(&notch_gz, Gz[0]);
-    Gz[0] = HPF_Update(&hpf_z, Gz[0]);
-   	arm_biquad_cascade_df2T_f32 (&lpf_Gz, Gz, filter_Gz, BLOCK_SIZE);
-   	filter_Gz[0] = kalman_filter_update(&gyro_filter_z, filter_Gz[0]);
+
+	arm_biquad_cascade_df2T_f32 (&imu_Gz_D_lpf, Gz, filter_Gz_D_lpf, BLOCK_SIZE);
+	filtered_Gz_D = filter_Gz_D_lpf[0];
+
+	Gz[0] = median_filter(Gz[0], &Gyro_z);
+	arm_biquad_cascade_df2T_f32 (&imu_Gz_notch, Gz, filter_Gz_notch, BLOCK_SIZE);
+	arm_biquad_cascade_df2T_f32 (&imu_Gz_lpf, filter_Gz_notch, filter_Gz_lpf, BLOCK_SIZE);
+   	filtered_Gz = filter_Gz_lpf[0];
+    if (isnan(filtered_Gz) || isinf(filtered_Gz)) {
+    	filtered_Gz = prev_filtered_Gz;
+    }
+    prev_filtered_Gz = filtered_Gz;
+}
+
+void get_mtf_data() {
+    for(int i = 0; i < MIKOLINL; i++) {
+        micolink_decode(buffer_message_mtf02[i],
+                       &distance, &distance_strength, &distance_precision, &distance_status,
+                       &flow_velocity_x, &flow_velocity_y, &flow_quality, &flow_status);
+    }
+}
+HAL_StatusTypeDef I2C_Start_Read_gyro(void) {
+    current_device = 0;
+    return BMX055_Read_Gyro_DMA(&hi2c1, dma_gyro_buffer);
+}
+
+HAL_StatusTypeDef I2C_Start_Read_accel(void) {
+    current_device = 1;
+    return BMX055_Read_Accel_DMA(&hi2c1, dma_accel_buffer);
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////смещение imu///////////////////////////////////////////////////////////////
 
 void bias() {
-	for (int i = 0; i < 512; i++) {
-		get_filter_data_gyro();
-		bias_Gx += Gx[0];
-		bias_Gy += Gy[0];
-		bias_Gz += Gz[0];
-		offset_Ax += Ax[0];
-		offset_Ay += Ay[0];
-		offset_Az += Az[0];
-    }
- bias_Gx = bias_Gx / 512;
- bias_Gy = bias_Gy / 512;
- bias_Gz = bias_Gz / 512;
- offset_Ax = offset_Ax / 512;
- offset_Ay = offset_Ay / 512;
- offset_Az = offset_Az / 512;
+	for (int i = 0; i < BIAS_OFSET; i++) {
+		BMX055_Read_Gyro(&hi2c1, &BMX055);
+		float32_t gx = median_filter(BMX055.Gx, &Gyro_x_bias);
+		float32_t gy = median_filter(BMX055.Gy, &Gyro_y_bias);
+		float32_t gz = median_filter(BMX055.Gz, &Gyro_z_bias);
+		bias_Gx += gx;
+		bias_Gy += gy;
+		bias_Gz += gz;
+		BMX055_Read_Accel(&hi2c1, &BMX055);
+		float32_t ax = median_filter(BMX055.Ax, &Accel_x_ofset);
+		float32_t ay = median_filter(BMX055.Ay, &Accel_y_ofset);
+		float32_t az = median_filter(BMX055.Az, &Accel_z_ofset);
+		offset_Ax += ax;
+		offset_Ay += ay;
+		offset_Az += az;
+		HAL_Delay(1);
+	}
+ bias_Gx = bias_Gx / BIAS_OFSET;
+ bias_Gy = bias_Gy / BIAS_OFSET;
+ bias_Gz = bias_Gz / BIAS_OFSET;
+ offset_Ax = offset_Ax / BIAS_OFSET;
+ offset_Ay = offset_Ay / BIAS_OFSET;
+ offset_Az = (offset_Az / BIAS_OFSET) - 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -583,11 +564,13 @@ void InitBMX055() {
     while (BMX055_BMA_Init(&hi2c1) == 1) {
     	retriesA++;
         if (retriesA >= 10) {
-        }
+        	break;
+    }
     }
     while (BMX055_BMG_Init(&hi2c1) == 1) {
   	  retriesG++;
         if (retriesG >= 10) {
+        	break;
         }
     }
 /*
@@ -607,99 +590,244 @@ void InitBMX055() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 void run_control_loop(){
 
-    // Проверяем потерю связи перед выполнением основного цикла
-    check_connection_loss();
-    // Если связь потеряна, не выполняем основной цикл управления
-    if (connection_lost == true) {
-    	HAL_UART_Receive_DMA(&huart6, buffer_message, DATA_SIZE);
-    	receive_and_parse_data(DATA_SIZE);
-    	return;
+	data_ready_gyro = 0;
+	data_ready_accel = 0;
+
+	count_calculate_frequency++;
+	if (count_calculate_frequency == 1000) {
+		count_calculate_frequency_flag = 1;
+	}
+    // Определяем режим полета по кнопке
+    if (button_mode == 0) {
+        flight_mode = FLIGHT_MODE_ACRO;
+    } else if (button_mode == 1) {
+        flight_mode = FLIGHT_MODE_ANGLE;
     }
-	receive_and_parse_data(DATA_SIZE);
-	get_filter_data_accel();
-	get_filter_data_gyro();
-	get_angle_mahony();
+	active_mode = flight_mode; // Определяем активный режим с приоритетом
+	get_filter_data_accel(); // получение отфильтрованных данных акселерометра
+	get_filter_data_gyro(); // получение отфильтрованных данных гироскопа
+	get_mtf_data();   // Обработка буфера c данными датчика mtf
+    gyro_integration_update(&gyro_integration, filtered_Gx, filtered_Gy); // обновление гпроскопа - 1000 Гц
+    process_optical_flow_data(&optical_flow_results,&gyro_integration,&lpf_mtf_x, &lpf_mtf_y,distance,flow_velocity_x, flow_velocity_y); // обработка оптического потока 50 Гц
+	get_angle_mahony();  // получение кватернионов и углов
     eulerToQuaternion(joystick_x, joystick_y, right_left, Quat_target); // функция преобразования углов в кватернион
 	quat_error(Quat_actual, Quat_actual_inv, Quat_target, Quat_error); // ошибка между текущим и целевым кватерниолном
+	throttle_mshot = ((potentiometer_value / 1000.0) * 2000.0) + 500;
+	max_pid_correction_mshot = MAX_CORRECTION;  //Ограничение пид-коррекции
+	error_pitch_angle = round_to(Quat_error[2] * (-1)); // ошибка по углу тангажа знак ошибки изменен
+	error_roll_angle = round_to(Quat_error[1]); // ошибка по углу крена
+	//текущая угловая скорость
+	actual_velocity_pitch = (-filtered_Gy);
+	actual_velocity_roll = filtered_Gx;
+	actual_velocity_yaw = filtered_Gz;
+	//текущая угловая скорость для д компоненты пид
+	actual_velocity_pitch_D = (-filtered_Gy_D);
+	actual_velocity_roll_D = filtered_Gx_D;
+	actual_velocity_yaw_D = filtered_Gz_D;
+    // MTF имеет высший приоритет при выполнении условий
+	if (distance > 100) {
+	    active_mode = FLIGHT_MODE_MTF;
+	}
+	// Вычисляем target_velocity на основе активного режима
+	switch(active_mode) {
+	    case FLIGHT_MODE_ANGLE:
+	    	target_velocity_pitch = PID_Compute(&pitch_pid_angle, error_pitch_angle); //желаемая угловая скорость по тангажу
+	    	target_velocity_roll = PID_Compute(&roll_pid_angle, error_roll_angle); //желаемая угловая скорость по крену
+	    	//Проверяем на NaN, Inf и ограничиваем
+	    	target_velocity_pitch = safe_pid_value(target_velocity_pitch, MAX_P);
+	    	target_velocity_roll = safe_pid_value(target_velocity_roll, MAX_P);
+	    	target_velocity_roll = (float32_t)target_velocity_roll;
+	    	target_velocity_pitch = (float32_t)target_velocity_pitch;
+	    	target_velocity_yaw = 0;
+	        break;
 
-	uint16_t throttle_mshot = ((potentiometer_value / 1000.0) * 2000.0) + 500;
-	float max_pid_correction_mshot = MAX_CORRECTION;  //Ограничение пид-коррекции
+	    case FLIGHT_MODE_ACRO:
+	        // используем значения с джойстика напрямую
+	        target_velocity_roll = joystick_y * 0.5f;   // Масштабируем под нужный диапазон
+	        target_velocity_pitch = joystick_x * 0.5f;  // Масштабируем под нужный диапазон
+	        target_velocity_yaw = right_left * 0.5f;    // Масштабируем под нужный диапазон
 
-	double error_pitch = Quat_error[2] * (-1); // ошибка по тангажу знак ошибки изменен
-	double error_roll = Quat_error[1]; // ошибка по крену
-	double error_yaw = Quat_error[3]; // ошибка по рысканью
+	        target_velocity_roll = expo_curve(joystick_y, 0.01f);
+	        target_velocity_pitch = expo_curve(joystick_x, 0.01f);
+	        target_velocity_yaw = expo_curve(right_left, 0.01f);
+	        target_velocity_roll = (float32_t)target_velocity_roll;
+	        target_velocity_pitch = (float32_t)target_velocity_pitch;
+	        target_velocity_yaw = (float32_t)target_velocity_yaw;
 
-	error_pitch = round_to(error_pitch);
-	error_roll = round_to(error_roll);
-	error_yaw = round_to(error_yaw);
+	    	//ошибка между угловыми скоростями
+	        error_pitch_rate = target_velocity_pitch - actual_velocity_pitch;
+	    	error_roll_rate = target_velocity_roll - actual_velocity_roll;
+	    	error_yaw_rate = target_velocity_yaw - actual_velocity_yaw;
+	    	//ошибка угловой скорости до третьего знака после запятой
+	        error_pitch_rate = round_to(error_pitch_rate);
+	    	error_roll_rate = round_to(error_roll_rate);
+	    	error_yaw_rate = round_to(error_yaw_rate);
+	    	//ошибка между угловыми скоростями для д компоненты пид
+	        error_pitch_rate_D = target_velocity_pitch - actual_velocity_pitch_D;
+	    	error_roll_rate_D = target_velocity_roll - actual_velocity_roll_D;
+	    	error_yaw_rate_D = target_velocity_yaw - actual_velocity_yaw_D;
+	    	//ошибка угловой скорости до третьего знака после запятой для д компоненты пид
+	        error_pitch_rate_D = round_to(error_pitch_rate_D);
+	    	error_roll_rate_D = round_to(error_roll_rate_D);
+	    	error_yaw_rate_D = round_to(error_yaw_rate_D);
 
-	errorpitch = error_pitch;
-	errorroll = error_roll;
-	erroryaw = error_yaw;
+	        break;
 
-	forse_pitch = PID_Compute(&pitch_pid, error_pitch, TRIM_PITCH_ERROR);
-	forse_roll = PID_Compute(&roll_pid, error_roll, TRIM_ROLL_ERROR);
-	forse_yaw = PID_Compute(&yaw_pid, error_yaw, TRIM_YAW_ERROR);
+        case FLIGHT_MODE_MTF:
+	        // используем значения с джойстика
+	        target_velocity_roll = expo_curve(joystick_y, 0.01f) * 0.5f; // Масштабируем под нужный диапазон
+	        target_velocity_pitch = expo_curve(joystick_x, 0.01f) * 0.5f; // Масштабируем под нужный диапазон
+	        target_velocity_yaw = expo_curve(right_left, 0.01f) * 0.5f; // Масштабируем под нужный диапазон
 
-	// Проверяем на NaN, Inf и ограничиваем
-	forse_pitch = safe_pid_value(forse_pitch, MAX_PID);
-	forse_roll = safe_pid_value(forse_roll, MAX_PID);
-	forse_yaw = safe_pid_value(forse_yaw, MAX_PID);
+	        target_velocity_roll = (float32_t)target_velocity_roll;
+	        target_velocity_pitch = (float32_t)target_velocity_pitch;
+	        target_velocity_yaw = (float32_t)target_velocity_yaw;
 
-	temp_x[0] = forse_pitch;
-	temp_y[0] = forse_roll;
-	temp_z[0] = forse_yaw;
+            // Переменные для хранения выхода PID скорости
+	        // static, чтобы сохранять значение между обновлениями датчика (50Гц)
+	        static float velocity_loop_output_pitch = 0.0f;
+	        static float velocity_loop_output_roll = 0.0f;
 
-	arm_biquad_cascade_df2T_f32 (&lpf_Errorx, temp_x, temp_forse_pitch, BLOCK_SIZE);
-	arm_biquad_cascade_df2T_f32 (&lpf_Errory, temp_y, temp_forse_roll, BLOCK_SIZE);
-	arm_biquad_cascade_df2T_f32 (&lpf_Errorz, temp_z, temp_forse_yaw, BLOCK_SIZE);
+	        if (optical_flow_results.new_optical_data_available) {
+	            error_pitch_mtf = target_velocity_pitch - optical_flow_results.speed_cm_s_y;
+	            error_roll_mtf  = target_velocity_roll - optical_flow_results.speed_cm_s_x;
+                error_pitch_mtf = round_to(error_pitch_mtf);
+                error_roll_mtf  = round_to(error_roll_mtf);
 
-	forse_pitch = temp_forse_pitch[0];
-	forse_roll = temp_forse_roll[0];
-	forse_yaw = temp_forse_yaw[0];
+                //target_velocity_pitch = PID_Compute(&pitch_pid_mtf, error_pitch_mtf); //желаемая угловая скорость по тангажу
+                //target_velocity_roll = PID_Compute(&roll_pid_mtf, error_roll_mtf); //желаемая угловая скорость по крену
+
+  			    target_velocity_pitch = PID_DoM_Compute(&pitch_pid_mtf_DoM, error_pitch_mtf,optical_flow_results.speed_cm_s_y); //желаемая угловая скорость по тангажу
+  			    target_velocity_roll = PID_DoM_Compute(&roll_pid_mtf_DoM, error_roll_mtf,optical_flow_results.speed_cm_s_x); //желаемая угловая скорость по крену
+
+                //Сохраняем результат для внутреннего контура
+  	            //Проверяем на NaN, Inf и ограничиваем
+                velocity_loop_output_pitch = safe_pid_value(target_velocity_pitch, MAX_P_MTF);
+                velocity_loop_output_roll  = safe_pid_value(target_velocity_roll, MAX_P_MTF);
+                optical_flow_results.new_optical_data_available = false;
+            }
+	        //Передача управления во внутренний контур - работает 1000 Гц
+            target_velocity_pitch = velocity_loop_output_pitch;
+            target_velocity_roll  = velocity_loop_output_roll;
+            target_velocity_roll  = (float32_t)target_velocity_roll;
+            target_velocity_pitch = (float32_t)target_velocity_pitch;
+
+      	    //ошибка между угловыми скоростями
+	        error_pitch_rate = target_velocity_pitch - actual_velocity_pitch;
+	        error_roll_rate = target_velocity_roll - actual_velocity_roll;
+	        error_yaw_rate = target_velocity_yaw - actual_velocity_yaw;
+	        //ошибка угловой скорости до третьего знака после запятой
+	        error_pitch_rate = round_to(error_pitch_rate);
+	        error_roll_rate = round_to(error_roll_rate);
+	        error_yaw_rate = round_to(error_yaw_rate);
+	        //ошибка между угловыми скоростями для д компоненты пид
+	        error_pitch_rate_D = target_velocity_pitch - actual_velocity_pitch_D;
+	        error_roll_rate_D = target_velocity_roll - actual_velocity_roll_D;
+	        error_yaw_rate_D = target_velocity_yaw - actual_velocity_yaw_D;
+	        //ошибка угловой скорости до третьего знака после запятой для д компоненты пид
+	        error_pitch_rate_D = round_to(error_pitch_rate_D);
+	        error_roll_rate_D = round_to(error_roll_rate_D);
+	        error_yaw_rate_D = round_to(error_yaw_rate_D);
+
+	        break;
+
+	    default:
+	        // Возврат в режим ACRO
+	        target_velocity_roll = joystick_y * 0.5f;   // Масштабируем под нужный диапазон
+	        target_velocity_pitch = joystick_x * 0.5f;  // Масштабируем под нужный диапазон
+	        target_velocity_yaw = right_left * 0.5f;    // Масштабируем под нужный диапазон
+	        target_velocity_roll = expo_curve(joystick_y, 0.01f);
+	        target_velocity_pitch = expo_curve(joystick_x, 0.01f);
+	        target_velocity_yaw = expo_curve(right_left, 0.01f);
+	        target_velocity_roll = (float32_t)target_velocity_roll;
+	        target_velocity_pitch = (float32_t)target_velocity_pitch;
+	        target_velocity_yaw = (float32_t)target_velocity_yaw;
+	        flight_mode = FLIGHT_MODE_ACRO;
+	        break;
+	}
 
 	if(button == 1 && potentiometer_value > 0){
-	   float pid_correction_1 = forse_roll + forse_pitch + forse_yaw;
+
+		//forse_pitch_rate = PID_2_Compute(&pitch_pid_rate, error_pitch_rate, error_pitch_rate_D);
+		//forse_roll_rate = PID_2_Compute(&roll_pid_rate, error_roll_rate, error_roll_rate_D);
+		//forse_yaw_rate = PID_2_Compute(&yaw_pid_rate, error_yaw_rate, error_yaw_rate_D);
+
+	   forse_pitch_rate = PID_DoM_Compute(&pitch_pid_rate_DoM, error_pitch_rate, actual_velocity_pitch_D);
+	   forse_roll_rate = PID_DoM_Compute(&roll_pid_rate_DoM, error_roll_rate, actual_velocity_roll_D);
+	   forse_yaw_rate = PID_DoM_Compute(&yaw_pid_rate_DoM, error_yaw_rate, actual_velocity_yaw_D);
+
+	   // Проверяем на NaN, Inf и ограничиваем
+	   forse_pitch_rate = safe_pid_value(forse_pitch_rate, MAX_PID_RATE);
+	   forse_roll_rate = safe_pid_value(forse_roll_rate, MAX_PID_RATE);
+	   forse_yaw_rate = safe_pid_value(forse_yaw_rate, MAX_PID_RATE);
+
+	   pid_correction_1 = forse_roll_rate + forse_pitch_rate + forse_yaw_rate;
 	   pid_correction_1 = constrain_float(pid_correction_1, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   int total_power_1 = throttle_mshot + pid_correction_1;// итоговая мощность левый передний мотор
+	   total_power_1 = throttle_mshot + pid_correction_1;// итоговая мощность левый передний мотор
 	   total_power_1 = constrain(total_power_1 + TRIM_FRONT_LEFT, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
-	   float pid_correction_2 = -forse_roll + forse_pitch - forse_yaw;
+	   pid_correction_2 = -forse_roll_rate + forse_pitch_rate - forse_yaw_rate;
 	   pid_correction_2 = constrain_float(pid_correction_2, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   int total_power_2 = throttle_mshot + pid_correction_2;// итоговая мощность правый передний мотор
+	   total_power_2 = throttle_mshot + pid_correction_2;// итоговая мощность правый передний мотор
 	   total_power_2 = constrain(total_power_2 + TRIM_FRONT_RIGHT, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
-	   float pid_correction_3 = forse_roll - forse_pitch - forse_yaw;
+	   pid_correction_3 = forse_roll_rate - forse_pitch_rate - forse_yaw_rate;
 	   pid_correction_3 = constrain_float(pid_correction_3, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   int total_power_3 = throttle_mshot + pid_correction_3;// итоговая мощность левый задний мотор
+	   total_power_3 = throttle_mshot + pid_correction_3;// итоговая мощность левый задний мотор
 	   total_power_3 = constrain(total_power_3 + TRIM_REAR_LEFT, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
-	   float pid_correction_4 = -forse_roll - forse_pitch + forse_yaw;
+	   pid_correction_4 = -forse_roll_rate - forse_pitch_rate + forse_yaw_rate;
 	   pid_correction_4 = constrain_float(pid_correction_4, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   int total_power_4 = throttle_mshot + pid_correction_4;// итоговая мощность правый задний мотор
+	   total_power_4 = throttle_mshot + pid_correction_4;// итоговая мощность правый задний мотор
 	   total_power_4 = constrain(total_power_4 + TRIM_REAR_RIGHT, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
-	   Multishot_SetThrottle(total_power_1, TIM_CHANNEL_1);
-	   Multishot_SetThrottle(total_power_2, TIM_CHANNEL_2);
-	   Multishot_SetThrottle(total_power_3, TIM_CHANNEL_3);
-	   Multishot_SetThrottle(total_power_4, TIM_CHANNEL_4);
+       // Применяем экспонинциального сглаживания к каждому сигналу мотора
+       filtered_power_1 = MOTOR_OUTPUT_FILTER_ALPHA * (int)total_power_1 + (1.0f - MOTOR_OUTPUT_FILTER_ALPHA) * filtered_power_1;
+       filtered_power_2 = MOTOR_OUTPUT_FILTER_ALPHA * (int)total_power_2 + (1.0f - MOTOR_OUTPUT_FILTER_ALPHA) * filtered_power_2;
+       filtered_power_3 = MOTOR_OUTPUT_FILTER_ALPHA * (int)total_power_3 + (1.0f - MOTOR_OUTPUT_FILTER_ALPHA) * filtered_power_3;
+       filtered_power_4 = MOTOR_OUTPUT_FILTER_ALPHA * (int)total_power_4 + (1.0f - MOTOR_OUTPUT_FILTER_ALPHA) * filtered_power_4;
+       filtered_power_1 = constrain_float(filtered_power_1, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+       filtered_power_2 = constrain_float(filtered_power_2, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+       filtered_power_3 = constrain_float(filtered_power_3, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+       filtered_power_4 = constrain_float(filtered_power_4, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	   // Передаем на моторы уже отфильтрованные значения
+	   Motors_Set_Throttle((uint16_t)filtered_power_1,(uint16_t)filtered_power_2,(uint16_t)filtered_power_3,(uint16_t)filtered_power_4);
+
+	   //Motors_Set_Throttle(MAX_PULSE_WIDTH, MAX_PULSE_WIDTH, MAX_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
 	  } else {
 
-	   Multishot_SetThrottle(MIN_PULSE_WIDTH, TIM_CHANNEL_1);
-	   Multishot_SetThrottle(MIN_PULSE_WIDTH, TIM_CHANNEL_2);
-	   Multishot_SetThrottle(MIN_PULSE_WIDTH, TIM_CHANNEL_3);
-	   Multishot_SetThrottle(MIN_PULSE_WIDTH, TIM_CHANNEL_4);
+	   // Сбрасываем состояния фильтра на минимальное значение
+	   filtered_power_1 = MIN_PULSE_WIDTH;
+	   filtered_power_2 = MIN_PULSE_WIDTH;
+	   filtered_power_3 = MIN_PULSE_WIDTH;
+	   filtered_power_4 = MIN_PULSE_WIDTH;
+
+	   total_power_1 = 500;
+	   total_power_2 = 500;
+	   total_power_3 = 500;
+	   total_power_4 = 500;
+
+	   PID_2_Reset(&pitch_pid_rate);
+	   PID_2_Reset(&roll_pid_rate);
+	   PID_2_Reset(&yaw_pid_rate);
+
+	   Motors_Set_Throttle(MIN_PULSE_WIDTH, MIN_PULSE_WIDTH, MIN_PULSE_WIDTH, MIN_PULSE_WIDTH);
 
 	  }
-
-	  uint32_t dt = HAL_GetTick() - last_time;
-	  freq = 1000.0f / dt;  // Частота в Гц
-	  last_time = HAL_GetTick();
+/*
+	  uint32_t current_cycle_time = DWT->CYCCNT;
+	  uint32_t dt_cycles = current_cycle_time - last_cycle_time;
+	  last_cycle_time = current_cycle_time;
+	  HAL_RCC_GetHCLKFreq(); // вернет частоту ядра
+	  if (dt_cycles > 0) {
+	      freq = (float)HAL_RCC_GetHCLKFreq() / (float)dt_cycles;
+	  }
+*/
 }
+
 /* USER CODE END 0 */
 
 /**
@@ -718,7 +846,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  HAL_Delay(2000);// Даем питанию стабилизироваться, а датчикам загрузиться
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -736,61 +864,84 @@ int main(void)
   MX_USART6_UART_Init();
   MX_I2C1_Init();
   MX_TIM1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  InitBMX055();// инициализация imu перед использованием
+  HAL_UART_Receive_DMA(&huart6, buffer_message_mtf02, MIKOLINL);
+  //HAL_UART_Receive_DMA(&huart1, buffer_message, DATA_SIZE); //для кастомного протокола remote_control
+  MAV_Init(&huart1); //инициализация для протокола mavlink
 
-  arm_biquad_cascade_df2T_init_f32(&lpf_Gx, NUM_STAGES, Coeffs_lpf, filterState_lpf_Gx); // инициализация фильтра
-  arm_biquad_cascade_df2T_init_f32(&lpf_Gy, NUM_STAGES, Coeffs_lpf, filterState_lpf_Gy);
-  arm_biquad_cascade_df2T_init_f32(&lpf_Gz, NUM_STAGES, Coeffs_lpf, filterState_lpf_Gz);
+  I2C_Bus_Reset(&hi2c1);
+  InitBMX055();// инициализация imu
 
-  arm_biquad_cascade_df2T_init_f32(&lpf_Ax, NUM_STAGES, Coeffs_lpf_accel, filterState_lpf_Ax); // инициализация фильтра
-  arm_biquad_cascade_df2T_init_f32(&lpf_Ay, NUM_STAGES, Coeffs_lpf_accel, filterState_lpf_Ay);
-  arm_biquad_cascade_df2T_init_f32(&lpf_Az, NUM_STAGES, Coeffs_lpf_accel, filterState_lpf_Az);
+  arm_rfft_fast_init_f32(&fft_params, FFT_LEN);
 
-  arm_biquad_cascade_df2T_init_f32(&lpf_Errorx, NUM_STAGES, Coeffs_lpf_Error, filterState_lpf_Errorx); // инициализация фильтра
-  arm_biquad_cascade_df2T_init_f32(&lpf_Errory, NUM_STAGES, Coeffs_lpf_Error, filterState_lpf_Errory);
-  arm_biquad_cascade_df2T_init_f32(&lpf_Errorz, NUM_STAGES, Coeffs_lpf_Error, filterState_lpf_Errorz);
+  arm_biquad_cascade_df2T_init_f32(&imu_Gx_lpf, NUM_STAGES_GYRO_LPF, Coeffs_gyro_lpf, filterState_Gx_lpf);
+  arm_biquad_cascade_df2T_init_f32(&imu_Gx_notch, NUM_STAGES_GYRO_NOTCH, Coeffs_notch_x, filterState_Gx_notch);
+  arm_biquad_cascade_df2T_init_f32(&imu_Gy_lpf, NUM_STAGES_GYRO_LPF, Coeffs_gyro_lpf, filterState_Gy_lpf);
+  arm_biquad_cascade_df2T_init_f32(&imu_Gy_notch, NUM_STAGES_GYRO_NOTCH, Coeffs_notch_y, filterState_Gy_notch);
+  arm_biquad_cascade_df2T_init_f32(&imu_Gz_lpf, NUM_STAGES_GYRO_LPF, Coeffs_gyro_lpf, filterState_Gz_lpf);
+  arm_biquad_cascade_df2T_init_f32(&imu_Gz_notch, NUM_STAGES_GYRO_NOTCH, Coeffs_notch_z, filterState_Gz_notch);
 
-  kalman_filter_init(&gyro_filter_x, GYRO_PROCESS_NOISE, GYRO_MEASUREMENT_NOISE, GYRO_ESTIMATION_ERROR, GYRO_INITIAL_VALUE);
-  kalman_filter_init(&gyro_filter_y, GYRO_PROCESS_NOISE, GYRO_MEASUREMENT_NOISE, GYRO_ESTIMATION_ERROR, GYRO_INITIAL_VALUE);
-  kalman_filter_init(&gyro_filter_z, GYRO_PROCESS_NOISE, GYRO_MEASUREMENT_NOISE, GYRO_ESTIMATION_ERROR, GYRO_INITIAL_VALUE);
+  arm_biquad_cascade_df2T_init_f32(&imu_Ax_lpf, NUM_STAGES_ACCEL_LPF, Coeffs_accel_lpf, filterState_Ax_lpf);
+  arm_biquad_cascade_df2T_init_f32(&imu_Ax_notch, NUM_STAGES_ACCEL_NOTCH, Coeffs_notch_x, filterState_Ax_notch);
+  arm_biquad_cascade_df2T_init_f32(&imu_Ay_lpf, NUM_STAGES_ACCEL_LPF, Coeffs_accel_lpf, filterState_Ay_lpf);
+  arm_biquad_cascade_df2T_init_f32(&imu_Ay_notch, NUM_STAGES_ACCEL_NOTCH, Coeffs_notch_y, filterState_Ay_notch);
+  arm_biquad_cascade_df2T_init_f32(&imu_Az_lpf, NUM_STAGES_ACCEL_LPF, Coeffs_accel_lpf, filterState_Az_lpf);
+  arm_biquad_cascade_df2T_init_f32(&imu_Az_notch, NUM_STAGES_ACCEL_NOTCH, Coeffs_notch_z, filterState_Az_notch);
 
-  kalman_filter_init(&accel_filter_x, ACCEL_PROCESS_NOISE, ACCEL_MEASUREMENT_NOISE, ACCEL_ESTIMATION_ERROR, ACCEL_INITIAL_VALUE);
-  kalman_filter_init(&accel_filter_y, ACCEL_PROCESS_NOISE, ACCEL_MEASUREMENT_NOISE, ACCEL_ESTIMATION_ERROR, ACCEL_INITIAL_VALUE);
-  kalman_filter_init(&accel_filter_z, ACCEL_PROCESS_NOISE, ACCEL_MEASUREMENT_NOISE, ACCEL_ESTIMATION_ERROR, ACCEL_Z_INITIAL_VALUE);
+  arm_biquad_cascade_df2T_init_f32(&imu_Gx_D_lpf, NUM_STAGES_D_GYRO_LPF, Coeffs_D_Gyro_lpf, filterState_Gx_D_lpf); // инициализация фильтра
+  arm_biquad_cascade_df2T_init_f32(&imu_Gy_D_lpf, NUM_STAGES_D_GYRO_LPF, Coeffs_D_Gyro_lpf, filterState_Gy_D_lpf);
+  arm_biquad_cascade_df2T_init_f32(&imu_Gz_D_lpf, NUM_STAGES_D_GYRO_LPF, Coeffs_D_Gyro_lpf, filterState_Gz_D_lpf);
 
-  init_notch_filter(&notch_ax, NOTCH_CENTER_FREQ, NOTCH_WIDTH, NOTCH_SAMPLE_RATE);
-  init_notch_filter(&notch_ay, NOTCH_CENTER_FREQ, NOTCH_WIDTH, NOTCH_SAMPLE_RATE);
-  init_notch_filter(&notch_az, NOTCH_CENTER_FREQ, NOTCH_WIDTH, NOTCH_SAMPLE_RATE);
+  arm_biquad_cascade_df2T_init_f32(&lpf_Ax, NUM_STAGES_ACCEL_FFT, Coeffs_accel_lpf_fft, filterState_Ax_lpf_fft); // инициализация фильтра
+  arm_biquad_cascade_df2T_init_f32(&lpf_Ay, NUM_STAGES_ACCEL_FFT, Coeffs_accel_lpf_fft, filterState_Ay_lpf_fft);
+  arm_biquad_cascade_df2T_init_f32(&lpf_Az, NUM_STAGES_ACCEL_FFT, Coeffs_accel_lpf_fft, filterState_Az_lpf_fft);
 
-  init_notch_filter(&notch_gx, NOTCH_CENTER_FREQ, NOTCH_WIDTH, NOTCH_SAMPLE_RATE);
-  init_notch_filter(&notch_gy, NOTCH_CENTER_FREQ, NOTCH_WIDTH, NOTCH_SAMPLE_RATE);
-  init_notch_filter(&notch_gz, NOTCH_CENTER_FREQ, NOTCH_WIDTH, NOTCH_SAMPLE_RATE);
+  arm_biquad_cascade_df2T_init_f32(&hpf_Ax, NUM_STAGES_ACCEL_FFT, Coeffs_accel_hpf_fft, filterState_Ax_hpf_fft); // инициализация фильтра
+  arm_biquad_cascade_df2T_init_f32(&hpf_Ay, NUM_STAGES_ACCEL_FFT, Coeffs_accel_hpf_fft, filterState_Ay_hpf_fft);
+  arm_biquad_cascade_df2T_init_f32(&hpf_Az, NUM_STAGES_ACCEL_FFT, Coeffs_accel_hpf_fft, filterState_Az_hpf_fft);
 
-  init_notch_filter(&notch_roll, NOTCH_CENTER_FREQ, ATTITUDE_NOTCH_WIDTH, NOTCH_SAMPLE_RATE);
-  init_notch_filter(&notch_pitch, NOTCH_CENTER_FREQ, ATTITUDE_NOTCH_WIDTH, NOTCH_SAMPLE_RATE);
-  init_notch_filter(&notch_yaw, NOTCH_CENTER_FREQ, ATTITUDE_NOTCH_WIDTH, NOTCH_SAMPLE_RATE);
 
-  PID_Init(&pitch_pid, PITCH_PID_KP, PITCH_PID_KI, PITCH_PID_KD, ALPHA, ALPHA_DERIVATIVE, INTEGRAL_LIMIT, SCALE_FACTOR);
-  PID_Init(&roll_pid, ROLL_PID_KP, ROLL_PID_KI, ROLL_PID_KD, ALPHA, ALPHA_DERIVATIVE, INTEGRAL_LIMIT, SCALE_FACTOR);
-  PID_Init(&yaw_pid, YAW_PID_KP, YAW_PID_KI, YAW_PID_KD, ALPHA, ALPHA_DERIVATIVE, INTEGRAL_LIMIT, SCALE_FACTOR);
+  PID_2_Init(&pitch_pid_rate, PITCH_PID_KP, PITCH_PID_KI, PITCH_PID_KD, ALPHA, ALPHA_DERIVATIVE, INTEGRAL_LIMIT, SCALE_FACTOR);
+  PID_2_Init(&roll_pid_rate, ROLL_PID_KP, ROLL_PID_KI, ROLL_PID_KD, ALPHA, ALPHA_DERIVATIVE, INTEGRAL_LIMIT, SCALE_FACTOR);
+  PID_2_Init(&yaw_pid_rate, YAW_PID_KP, YAW_PID_KI, YAW_PID_KD, ALPHA, ALPHA_DERIVATIVE, INTEGRAL_LIMIT, SCALE_FACTOR);
+
+  PID_Init(&pitch_pid_angle, PITCH_PID_KP_RATE, PITCH_PID_KI_RATE, PITCH_PID_KD_RATE, ALPHA_RATE, ALPHA_DERIVATIVE_RATE, INTEGRAL_LIMIT_RATE, SCALE_FACTOR_RATE);
+  PID_Init(&roll_pid_angle, ROLL_PID_KP_RATE, ROLL_PID_KI_RATE, ROLL_PID_KD_RATE, ALPHA_RATE, ALPHA_DERIVATIVE_RATE, INTEGRAL_LIMIT_RATE, SCALE_FACTOR_RATE);
+
+  PID_Init(&pitch_pid_mtf, PITCH_PID_KP_MTF, PITCH_PID_KI_MTF, PITCH_PID_KD_MTF, ALPHA_MTF, ALPHA_DERIVATIVE_MTF, INTEGRAL_LIMIT_MTF, SCALE_FACTOR_MTF);
+  PID_Init(&roll_pid_mtf, ROLL_PID_KP_MTF, ROLL_PID_KI_MTF, ROLL_PID_KD_MTF, ALPHA_MTF, ALPHA_DERIVATIVE_MTF, INTEGRAL_LIMIT_MTF, SCALE_FACTOR_MTF);
+
+  PID_DoM_Init(&pitch_pid_rate_DoM, PITCH_PID_KP_DoM, PITCH_PID_KI_DoM, PITCH_PID_KD_DoM, ALPHA_DoM, ALPHA_DERIVATIVE_DoM, INTEGRAL_LIMIT_DoM, SCALE_FACTOR_DoM);
+  PID_DoM_Init(&roll_pid_rate_DoM, ROLL_PID_KP_DoM, ROLL_PID_KI_DoM, ROLL_PID_KD_DoM, ALPHA_DoM, ALPHA_DERIVATIVE_DoM, INTEGRAL_LIMIT_DoM, SCALE_FACTOR_DoM);
+  PID_DoM_Init(&yaw_pid_rate_DoM, YAW_PID_KP_DoM, YAW_PID_KI_DoM, YAW_PID_KD_DoM, ALPHA_DoM, ALPHA_DERIVATIVE_DoM, INTEGRAL_LIMIT_DoM, SCALE_FACTOR_DoM);
+
+  PID_DoM_Init(&pitch_pid_angle_DoM, PITCH_PID_KP_RATE_DoM, PITCH_PID_KI_RATE_DoM, PITCH_PID_KD_RATE_DoM, ALPHA_RATE_DoM, ALPHA_DERIVATIVE_RATE_DoM, INTEGRAL_LIMIT_RATE_DoM, SCALE_FACTOR_RATE_DoM);
+  PID_DoM_Init(&roll_pid_angle_DoM, ROLL_PID_KP_RATE_DoM, ROLL_PID_KI_RATE_DoM, ROLL_PID_KD_RATE_DoM, ALPHA_RATE_DoM, ALPHA_DERIVATIVE_RATE_DoM, INTEGRAL_LIMIT_RATE_DoM, SCALE_FACTOR_RATE_DoM);
+
+  PID_DoM_Init(&pitch_pid_mtf_DoM, PITCH_PID_KP_MTF_DoM, PITCH_PID_KI_MTF_DoM, PITCH_PID_KD_MTF_DoM, ALPHA_MTF_DoM, ALPHA_DERIVATIVE_MTF_DoM, INTEGRAL_LIMIT_MTF_DoM, SCALE_FACTOR_MTF_DoM);
+  PID_DoM_Init(&roll_pid_mtf_DoM, ROLL_PID_KP_MTF_DoM, ROLL_PID_KI_MTF_DoM, ROLL_PID_KD_MTF_DoM, ALPHA_MTF_DoM, ALPHA_DERIVATIVE_MTF_DoM, INTEGRAL_LIMIT_MTF_DoM, SCALE_FACTOR_MTF_DoM);
+
+  low_pass_filter_init(&lpf_mtf_y, 0.1f);
+  low_pass_filter_init(&lpf_mtf_x, 0.1f);
 
   bias();
 
+  HAL_I2C_DeInit(&hi2c1);
+  MX_I2C1_Init();
+
   last_time = HAL_GetTick();
 
-  HPF_Init(&hpf_x, HPF_ALPHA, Gx[0]);
-  HPF_Init(&hpf_y, HPF_ALPHA, Gy[0]);
-  HPF_Init(&hpf_z, HPF_ALPHA, Gz[0]);
+  Motors_DMA_Init(); // инициализация DMA для моторов
 
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+  optical_flow_results_init(&optical_flow_results);
+  memset(&gyro_integration, 0, sizeof(gyro_integration));
 
   HAL_TIM_Base_Start_IT(&htim11);
-  HAL_UART_Receive_DMA(&huart6, buffer_message, DATA_SIZE);
+
+  //CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  //DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
   /* USER CODE END 2 */
 
@@ -798,17 +949,181 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  snprintf(buf, sizeof(buf),"freq %f,button %d,potentiometer_value %d,joystick_x %d,joystick_y %d,right_left %d,pitch %f,roll %f,yaw %f\n",
-	  freq,button,potentiometer_value,joystick_x,joystick_y,right_left,pitch,roll,yaw);
-	  HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+	MAV_Process();
+	MAV_Check_Connection(&huart1);
+	///////////////для кастомного протокола remote_control/////////////////////////////////
+	/*
+    check_connection_loss();
+    if (connection_lost == true) {
+    	connection_lost_flag = 1;
+    }
+	if (data_ready_flag == 1) {
+		receive_and_parse_data(DATA_SIZE); // получение сигналов управления
+		data_ready_flag = 0;
+	}
+	*/
+	////////////////////////////////////////////////////////////////////////////////////////
+	if (count_calculate_frequency_flag == 1) {
+		update_coeff();//Обновление коэффициентов для режекторного фильтра 1 раз в секунду
+	}
+	///////////////для кастомного протокола remote_control/////////////////////////////////
+	/*
+    if (connection_lost_flag == 1) {
+        HAL_UART_AbortReceive(&huart1);  // Принудительно остановить DMA
+    	MX_USART1_UART_Init();
+    	HAL_UART_Receive_DMA(&huart1, buffer_message, DATA_SIZE);
+    	receive_and_parse_data(DATA_SIZE);
+    	connection_lost_flag = 0;
+    }
+    */
+	/////////////////////////////////////////////////////////////////////////////////////////
+	  //snprintf(buf, sizeof(buf),"freq %f\n",freq);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
 
-	  //snprintf(buf, sizeof(buf),"errorpitch %f,errorroll %f,erroryaw %f\n",errorpitch,errorroll,erroryaw);
+	  //snprintf(buf, sizeof(buf),"distance %lu,distance_strength %d,distance_precision %d,distance_status %d,flow_velocity_x %d,flow_velocity_y %d,flow_quality %d,flow_status %d\n",
+	  //distance,distance_strength,distance_precision,distance_status,flow_velocity_x,flow_velocity_y,flow_quality,flow_status);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+ //snprintf(buf, sizeof(buf),"button_2 %d,button %d,potentiometer_value %d,joystick_x %d,joystick_y %d,right_left %d,pitch %f,roll %f,distance %lu\n",
+ //button_2,button,potentiometer_value,joystick_x,joystick_y,right_left,pitch,roll,distance);
+ //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+    //snprintf(buf, sizeof(buf),"current_time %d,last_received_time %d,potentiometer_value %d\n",current_time,last_received_time,potentiometer_value);
+    //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"distance_metr %f\n",distance_metr);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"gyro_x %f,gyro_y %f,mtf_x %f,mtf_y %f\n",gyro_x,gyro_y,mtf_x,mtf_y);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+ //snprintf(buf, sizeof(buf),"vibration_frequency_x %f,vibration_frequency_y %f,vibration_frequency_z %f\n",vibration_frequency_x,vibration_frequency_y,vibration_frequency_z);
+ //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"freq %f\n",freq);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"target_velocity_pitch %f,target_velocity_roll %f,error_pitch_rate %f,error_roll_rate %f\n",
+	  //target_velocity_pitch,target_velocity_roll,error_pitch_rate,error_roll_rate);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"flow_velocity_x %d,flow_velocity_y %d\n",flow_velocity_x,flow_velocity_y);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"error_pitch_rate %f,error_roll_rate %f\n",error_pitch_rate,error_roll_rate);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"error_pitch_mtf %f,error_roll_mtf %f\n",error_pitch_mtf,error_roll_mtf);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"V_linear_y_gyro %f,V_linear_x_gyro %f\n",V_linear_y_gyro,V_linear_x_gyro);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"V_linear_y_gyro %f,speed_cm_s_y %f\n",V_linear_y_gyro,speed_cm_s_y);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+  	  //snprintf(buf, sizeof(buf),"speed_cm_s_y %f,speed_cm_s_x %f\n",optical_flow_results.speed_cm_s_y,optical_flow_results.speed_cm_s_x);
+  	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"V_linear_x_gyro %f,V_linear_x_mtf %f\n",V_linear_x_gyro,V_linear_x_mtf);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"speed_cm_s_y %f,speed_cm_s_x %f\n",speed_cm_s_y,speed_cm_s_x);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"speed_cm_s_y %f,speed_cm_s_x %f\n",optical_flow_results.speed_cm_s_y,optical_flow_results.speed_cm_s_x);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"actual_velocity_roll %f,speed_cm_s_x %f\n",actual_velocity_roll,speed_cm_s_x);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"actual_velocity_pitch %f,error_pitch_mtf %f\n",actual_velocity_pitch,error_pitch_mtf);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+//snprintf(buf, sizeof(buf),"target_velocity_pitch %f,target_velocity_roll %f,error_pitch_mtf %f,error_roll_mtf %f\n",
+//target_velocity_pitch,target_velocity_roll,error_pitch_mtf,error_roll_mtf);
+//HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"total_power_1 %d,total_power_2 %d,total_power_3 %d,total_power_4 %d\n",total_power_1,total_power_2,total_power_3,total_power_4);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"error_pitch_mtf %f,error_roll_mtf %f\n",error_pitch_mtf,error_roll_mtf);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"button %d,potentiometer_value %d,joystick_x %d,joystick_y %d,right_left %d,pitch %f,roll %f,yaw %f\n",
+	  //button,potentiometer_value,joystick_x,joystick_y,right_left,pitch,roll,yaw);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+  //snprintf(buf, sizeof(buf),"button_2 %d,button %d,potentiometer_value %d,joystick_x %d,joystick_y %d,right_left %d,pitch %f,roll %f,yaw %f\n",
+  //button_2,button,potentiometer_value,joystick_x,joystick_y,right_left,pitch,roll,yaw);
+  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"filter_Gx %f,filter_Gy %f,filter_Gz %f\n",filtered_Gx,filtered_Gy,filtered_Gz);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"filter_Gx_final %f,filter_Gy_final %f,filter_Gz_final %f\n",filter_Gx_final,filter_Gy_final,filter_Gz_final);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"target_velocity_pitch %f,target_velocity_roll %f,target_velocity_yaw %f\n",target_velocity_pitch,target_velocity_roll,target_velocity_yaw);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"Ax_temp %f,filter_Ax_temp %f\n",Gx_temp[0],filter_Gx_temp[0]);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"Ax %f,filter_Ax %f\n",Ax[0],filter_Ax[0]);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"throttle_mshot %d\n",throttle_mshot);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"Gx %f,filter_Gx %f\n",Gx[0],filtered_Gx);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"Gx %f,filter_Gx_final %f\n",Gx[0],filter_Gx_final);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"filter_Gx_final %f,filter_Gx %f\n",filter_Gx_final,filtered_Gx);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"Gx %f,filter_Gx %f\n",Gx[0],filtered_Gx_D);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"error_pitch_rate %f,error_roll_rate %f,error_yaw_rate %f\n",error_pitch_rate,error_roll_rate,error_yaw_rate);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"actual_velocity_pitch %f,actual_velocity_roll %f,actual_velocity_yaw %f,error_pitch_rate %f,error_roll_rate %f,error_yaw_rate %f\n",
+	  //actual_velocity_pitch,actual_velocity_roll,actual_velocity_yaw,error_pitch_rate,error_roll_rate,error_yaw_rate);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"actual_velocity_pitch %f,actual_velocity_roll %f,optical_flow_results.speed_cm_s_y %f,optical_flow_results.speed_cm_s_x %f\n",
+	  //actual_velocity_pitch,actual_velocity_roll,optical_flow_results.speed_cm_s_y,optical_flow_results.speed_cm_s_x);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"error_pitch_rate %f,error_roll_rate %f,error_yaw_rate %f\n",error_pitch_rate,error_roll_rate,error_yaw_rate);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"button %d,forse_pitch_rate %d,forse_roll_rate %d,forse_yaw_rate %d\n",button,forse_pitch_rate,forse_roll_rate,forse_yaw_rate);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //nprintf(buf, sizeof(buf),"button %d,potentiometer_value %d,filtered_power_1 %d,filtered_power_2 %d,filtered_power_3 %d,filtered_power_4 %d\n",
+	  //button,potentiometer_value,filtered_power_1,filtered_power_2,filtered_power_3,filtered_power_4);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"target_velocity_pitch %f,target_velocity_roll %f,target_velocity_yaw %f\n",target_velocity_pitch,target_velocity_roll,target_velocity_yaw);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+	  //snprintf(buf, sizeof(buf),"target_velocity_yaw %f\n",target_velocity_yaw);
+	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+
+	  //snprintf(buf, sizeof(buf),"flow_velocity_x %d,flow_velocity_y %d\n",flow_velocity_x,flow_velocity_y);
 	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
+
   /* USER CODE END 3 */
 }
 
@@ -860,11 +1175,73 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+/////////////////////////////////////////////////////////////////////////// вариан запуска из прерывания i2c dma /////////////////////////////////////////////////////////////////
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim == &htim11) {
-        run_control_loop(); // Вызов всей логики управления
+   if (htim == &htim11) {
+       // 1. Проверяем состояние HAL
+       if (HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
+           // Сбрасываем счетчик таймаута, так как шина жива
+           i2c_timeout_counter = 0;
+           // Пытаемся запустить чтение
+           if (I2C_Start_Read_gyro() != HAL_OK) {
+           }
+       }
+       else {
+           // 2. Шина ЗАНЯТА (BUSY)
+           i2c_timeout_counter++;
+           // Если шина занята более 5 циклов (5 мс) - это зависание.
+           // При 400кГц транзакция длится < 1мс.
+           if (i2c_timeout_counter > 5) {
+               // Принудительный сброс I2C
+               HAL_I2C_Init(&hi2c1);
+               i2c_timeout_counter = 0;
+           }
+       }
+   }
+}
+// Колбэк завершения приема DMA
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
+   if (hi2c->Instance == hi2c1.Instance) {
+       if (current_device == 0) {
+           // 1. Данные гироскопа получены
+           BMX055_Process_Gyro_Raw(&BMX055, dma_gyro_buffer);
+           data_ready_gyro = 1;
+           // 2. Запускаем акселерометр
+           if (I2C_Start_Read_accel() != HAL_OK) {
+               // Если запуск не удался, цепочка разорвана.
+           }
+       }
+       else if (current_device == 1) {
+           // 3. Данные акселерометра получены
+           BMX055_Process_Accel_Raw(&BMX055, dma_accel_buffer);
+           data_ready_accel = 1;
+           // 4. Запускаем расчеты
+           run_control_loop();
+       }
+   }
+}
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
+   if (hi2c->Instance == hi2c1.Instance) {
+       current_device = 0;
+   }
+}
+///////////////для кастомного протокола remote_control/////////////////////////////////
+/*
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+    if (huart == &huart1) {
+    	data_ready_flag = 1;
     }
 }
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart){
+    if (huart == &huart1) {
+    	connection_lost_flag = 1;
+    }
+}
+*/
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /* USER CODE END 4 */
 

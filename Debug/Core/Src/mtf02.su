@@ -1,0 +1,3 @@
+../Core/Src/mtf02.c:32:6:micolink_decode	48	static
+../Core/Src/mtf02.c:68:6:micolink_check_sum	96	static
+../Core/Src/mtf02.c:87:6:micolink_parse_char	16	static

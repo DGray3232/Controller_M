@@ -1,0 +1,342 @@
+/* globals.c */
+#include "globals.h"
+
+GyroIntegration_t gyro_integration = {0};
+OpticalFlowResults_t optical_flow_results = {0};
+
+BMX055_t BMX055;
+
+PID_2_Controller pitch_pid_rate;
+PID_2_Controller roll_pid_rate;
+PID_2_Controller yaw_pid_rate;
+
+PID_Controller pitch_pid_angle;
+PID_Controller roll_pid_angle;
+
+PID_Controller pitch_pid_mtf;
+PID_Controller roll_pid_mtf;
+
+PID_DoM_Controller pitch_pid_rate_DoM;
+PID_DoM_Controller roll_pid_rate_DoM;
+PID_DoM_Controller yaw_pid_rate_DoM;
+
+PID_DoM_Controller pitch_pid_angle_DoM;
+PID_DoM_Controller roll_pid_angle_DoM;
+
+PID_DoM_Controller pitch_pid_mtf_DoM;
+PID_DoM_Controller roll_pid_mtf_DoM;
+
+MedianFilter Gyro_x = {0};
+MedianFilter Gyro_y = {0};
+MedianFilter Gyro_z = {0};
+MedianFilter Accel_x = {0};
+MedianFilter Accel_y = {0};
+MedianFilter Accel_z = {0};
+MedianFilter Gyro_x_bias = {0};
+MedianFilter Gyro_y_bias = {0};
+MedianFilter Gyro_z_bias = {0};
+MedianFilter Accel_x_ofset = {0};
+MedianFilter Accel_y_ofset = {0};
+MedianFilter Accel_z_ofset = {0};
+
+Filter_lpf lpf_mtf_y;
+Filter_lpf lpf_mtf_x;
+
+arm_biquad_cascade_df2T_instance_f32 imu_Gx_lpf;
+arm_biquad_cascade_df2T_instance_f32 imu_Gx_notch;
+arm_biquad_cascade_df2T_instance_f32 imu_Gy_lpf;
+arm_biquad_cascade_df2T_instance_f32 imu_Gy_notch;
+arm_biquad_cascade_df2T_instance_f32 imu_Gz_lpf;
+arm_biquad_cascade_df2T_instance_f32 imu_Gz_notch;
+
+arm_biquad_cascade_df2T_instance_f32 imu_Ax_lpf;
+arm_biquad_cascade_df2T_instance_f32 imu_Ax_notch;
+arm_biquad_cascade_df2T_instance_f32 imu_Ay_lpf;
+arm_biquad_cascade_df2T_instance_f32 imu_Ay_notch;
+arm_biquad_cascade_df2T_instance_f32 imu_Az_lpf;
+arm_biquad_cascade_df2T_instance_f32 imu_Az_notch;
+
+arm_biquad_cascade_df2T_instance_f32 imu_Gx_D_lpf;
+arm_biquad_cascade_df2T_instance_f32 imu_Gy_D_lpf;
+arm_biquad_cascade_df2T_instance_f32 imu_Gz_D_lpf;
+
+arm_biquad_cascade_df2T_instance_f32 lpf_Ax;
+arm_biquad_cascade_df2T_instance_f32 lpf_Ay;
+arm_biquad_cascade_df2T_instance_f32 lpf_Az;
+
+arm_biquad_cascade_df2T_instance_f32 hpf_Ax;
+arm_biquad_cascade_df2T_instance_f32 hpf_Ay;
+arm_biquad_cascade_df2T_instance_f32 hpf_Az;
+
+arm_rfft_fast_instance_f32 fft_params;
+
+char buf[250];
+/*
+int joystick_x = 0; //для кастомного протокола remote_control
+int joystick_y = 0;
+int potentiometer_value = 0;
+int right_left = 0;
+int button = 0;
+int button_2 = 0;
+*/
+int16_t joystick_x = 0;
+int16_t joystick_y = 0;
+uint16_t potentiometer_value = 0;
+int16_t right_left = 0;
+uint16_t button = 0;
+uint16_t button_2 = 0;
+uint8_t prev_button_2 = 0;
+
+bool mavlink_connection_active = false;
+uint32_t mav_last_packet_time = 0;
+int received_checksum, calculated_checksum = 0;
+uint8_t buffer_message[DATA_SIZE] = {0};
+
+uint32_t last_received_time = 0;
+uint32_t current_time = 0;
+bool connection_lost = false;
+int connection_lost_flag = 0;
+
+float32_t Ax[1] = {0};
+float32_t Ay[1] = {0};
+float32_t Az[1] = {0};
+float32_t filter_Ax[1] = {0};
+float32_t filter_Ay[1] = {0};
+float32_t filter_Az[1] = {0};
+float32_t offset_Ax = {0};
+float32_t offset_Ay = {0};
+float32_t offset_Az = {0};
+float32_t filter_Ax_lpf[1] = {0};
+float32_t filter_Ay_lpf[1] = {0};
+float32_t filter_Az_lpf[1] = {0};
+float32_t filter_Ax_notch[1] = {0};
+float32_t filter_Ay_notch[1] = {0};
+float32_t filter_Az_notch[1] = {0};
+
+float32_t Gx[1] = {0};
+float32_t Gy[1] = {0};
+float32_t Gz[1] = {0};
+float32_t bias_Gx = {0};
+float32_t bias_Gy = {0};
+float32_t bias_Gz = {0};
+float32_t filter_Gx[1] = {0};
+float32_t filter_Gy[1] = {0};
+float32_t filter_Gz[1] = {0};
+float32_t filter_Gx_D_lpf[1] = {0};
+float32_t filter_Gy_D_lpf[1] = {0};
+float32_t filter_Gz_D_lpf[1] = {0};
+
+float32_t filter_Gx_lpf[1] = {0};
+float32_t filter_Gx_notch[1] = {0};
+float32_t filter_Gy_lpf[1] = {0};
+float32_t filter_Gy_notch[1] = {0};
+float32_t filter_Gz_lpf[1] = {0};
+float32_t filter_Gz_notch[1] = {0};
+
+float32_t actual_velocity_pitch = 0;
+float32_t actual_velocity_roll = 0;
+float32_t actual_velocity_yaw = 0;
+float32_t actual_velocity_pitch_D = 0;
+float32_t actual_velocity_roll_D = 0;
+float32_t actual_velocity_yaw_D = 0;
+float32_t target_velocity_pitch = 0;
+float32_t target_velocity_roll = 0;
+float32_t target_velocity_yaw = 0;
+
+float32_t filtered_Gx = 0;
+float32_t filtered_Gy = 0;
+float32_t filtered_Gz = 0;
+float32_t filtered_Gx_D = 0;
+float32_t filtered_Gy_D = 0;
+float32_t filtered_Gz_D = 0;
+float32_t filtered_Ax = 0;
+float32_t filtered_Ay = 0;
+float32_t filtered_Az = 0;
+
+float32_t prev_filtered_Gx = 0;
+float32_t prev_filtered_Gy = 0;
+float32_t prev_filtered_Gz = 0;
+float32_t prev_filtered_Ax = 0;
+float32_t prev_filtered_Ay = 0;
+float32_t prev_filtered_Az = 0;
+
+float error_pitch_rate = 0;
+float error_roll_rate = 0;
+float error_yaw_rate = 0;
+
+float error_pitch_rate_D = 0;
+float error_roll_rate_D = 0;
+float error_yaw_rate_D = 0;
+
+float error_pitch_angle = 0;
+float error_roll_angle = 0;
+
+float error_pitch_mtf = 0;
+float error_roll_mtf = 0;
+float error_pitch_mtf_D = 0;
+float error_roll_mtf_D = 0;
+
+int forse_pitch_rate = 0;
+int forse_roll_rate = 0;
+int forse_yaw_rate = 0;
+
+uint16_t throttle_mshot = 0;
+float max_pid_correction_mshot = 0;
+
+float pitch = 0.0f, yaw = 0.0f, roll = 0.0f;
+float Quat_actual[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+float Quat_target[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+float Quat_actual_inv[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+float Quat_error[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+float Quat_previous[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+
+float pid_correction_1 = 0;
+float pid_correction_2 = 0;
+float pid_correction_3 = 0;
+float pid_correction_4 = 0;
+int total_power_1 = 0;
+int total_power_2 = 0;
+int total_power_3 = 0;
+int total_power_4 = 0;
+
+uint32_t m1_pulse[1] = {MIN_PULSE_WIDTH};
+uint32_t m2_pulse[1] = {MIN_PULSE_WIDTH};
+uint32_t m3_pulse[1] = {MIN_PULSE_WIDTH};
+uint32_t m4_pulse[1] = {MIN_PULSE_WIDTH};
+
+int filtered_power_1 = MIN_PULSE_WIDTH;
+int filtered_power_2 = MIN_PULSE_WIDTH;
+int filtered_power_3 = MIN_PULSE_WIDTH;
+int filtered_power_4 = MIN_PULSE_WIDTH;
+
+float32_t Ax_fft[FFT_LEN] = {0};
+float32_t Ay_fft[FFT_LEN] = {0};
+float32_t Az_fft[FFT_LEN] = {0};
+
+uint16_t x_index = 0;
+uint16_t y_index = 0;
+uint16_t z_index = 0;
+
+float32_t Ax_for_fft[1] = {0};
+float32_t Ay_for_fft[1] = {0};
+float32_t Az_for_fft[1] = {0};
+
+float32_t filter_hpf_Ax_for_fft[1] = {0};
+float32_t filter_hpf_Ay_for_fft[1] = {0};
+float32_t filter_hpf_Az_for_fft[1] = {0};
+
+float32_t filter_lpf_Ax_for_fft[1] = {0};
+float32_t filter_lpf_Ay_for_fft[1] = {0};
+float32_t filter_lpf_Az_for_fft[1] = {0};
+
+float32_t filter_Ax_for_fft = 0;
+float32_t filter_Ay_for_fft = 0;
+float32_t filter_Az_for_fft = 0;
+
+float vibration_frequency_x = 0;
+float vibration_frequency_y = 0;
+float vibration_frequency_z = 0;
+
+float previous_freq_x = 0;
+float previous_freq_y = 0;
+float previous_freq_z = 0;
+
+uint8_t buffer_message_mtf02[MIKOLINL];
+
+uint32_t distance = 0;
+uint8_t distance_strength = 0;
+uint8_t distance_precision = 0;
+uint8_t distance_status = 0;
+int16_t flow_velocity_x = 0;
+int16_t flow_velocity_y = 0;
+uint8_t flow_quality = 0;
+uint8_t flow_status = 0;
+
+uint8_t flight_mode = FLIGHT_MODE_ACRO;
+int button_mode = 0;
+uint8_t active_mode = 0;
+
+uint32_t last_cycle_time = 0;
+float freq = 0;
+int count_calculate_frequency = 0;
+
+uint8_t dma_accel_buffer[7];
+uint8_t dma_gyro_buffer[6];
+
+volatile uint8_t current_device = 0;
+volatile uint8_t data_ready_gyro = 0;
+volatile uint8_t data_ready_accel = 0;
+volatile uint8_t i2c_busy_flag = 0;
+uint32_t i2c_timeout_counter = 0;
+uint32_t count_calculate_frequency_flag = 0;
+int data_ready_flag = 0;
+uint32_t last_time = 0; // Добавлено
+
+float fft_output_buffer[FFT_LEN * 2];
+float fft_magnitude_buffer[FFT_LEN / 2];
+
+float32_t filterState_Gx_lpf[NUM_STAGES_GYRO_LPF * 4] = {0};
+float32_t filterState_Gx_notch[NUM_STAGES_GYRO_NOTCH * 4] = {0};
+float32_t filterState_Gy_lpf[NUM_STAGES_GYRO_LPF * 4] = {0};
+float32_t filterState_Gy_notch[NUM_STAGES_GYRO_NOTCH * 4] = {0};
+float32_t filterState_Gz_lpf[NUM_STAGES_GYRO_LPF * 4] = {0};
+float32_t filterState_Gz_notch[NUM_STAGES_GYRO_NOTCH * 4] = {0};
+
+float32_t filterState_Ax_lpf[NUM_STAGES_ACCEL_LPF * 4] = {0};
+float32_t filterState_Ax_notch[NUM_STAGES_ACCEL_NOTCH * 4] = {0};
+float32_t filterState_Ay_lpf[NUM_STAGES_ACCEL_LPF * 4] = {0};
+float32_t filterState_Ay_notch[NUM_STAGES_ACCEL_NOTCH * 4] = {0};
+float32_t filterState_Az_lpf[NUM_STAGES_ACCEL_LPF * 4] = {0};
+float32_t filterState_Az_notch[NUM_STAGES_ACCEL_NOTCH * 4] = {0};
+
+float32_t filterState_Gx_D_lpf[NUM_STAGES_D_GYRO_LPF * 4] = {0};
+float32_t filterState_Gy_D_lpf[NUM_STAGES_D_GYRO_LPF * 4] = {0};
+float32_t filterState_Gz_D_lpf[NUM_STAGES_D_GYRO_LPF * 4] = {0};
+
+float32_t filterState_Ax_lpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
+float32_t filterState_Ay_lpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
+float32_t filterState_Az_lpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
+
+float32_t filterState_Ax_hpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
+float32_t filterState_Ay_hpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
+float32_t filterState_Az_hpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
+
+float32_t Coeffs_D_Gyro_lpf[NUM_STAGES_D_GYRO_LPF * 5] = {
+	      0.00080636f,   0.00161272f,   0.00080636f,   1.38761971f,  -0.49242289f,
+	      1.00000000f,   2.00000003f,   0.99999999f,   1.62993553f,  -0.75304017f
+	};
+
+float32_t Coeffs_accel_lpf_fft[NUM_STAGES_ACCEL_FFT * 5] = {
+	      0.43284664f,   0.86569330f,   0.43284664f,  -1.04859958f,  -0.29614036f,
+	      1.00000000f,   1.99999997f,   1.00000001f,  -1.32091343f,  -0.63273879f
+	};
+
+float32_t Coeffs_accel_hpf_fft[NUM_STAGES_ACCEL_FFT * 5] = {
+		  0.95978223f,  -1.91956449f,   0.95978222f,   1.94263823f,  -0.94359728f,
+	      1.00000000f,  -1.99999997f,   1.00000001f,   1.97526963f,  -0.97624479f
+	};
+
+float32_t Coeffs_gyro_lpf[NUM_STAGES_GYRO_LPF * 5] = {
+		  0.00000066f,   0.00000134f,   0.00000068f,   1.36626238f,  -0.46945250f,
+		  1.00000000f,   1.99963659f,   1.00011210f,   1.42376174f,  -0.53129463f,
+		  1.00000000f,   1.96916257f,   0.96963251f,   1.54381368f,  -0.66041376f,
+		  1.00000000f,   2.00036345f,   0.99988794f,   1.73495293f,  -0.86598925f
+	};
+float32_t Coeffs_accel_lpf[NUM_STAGES_GYRO_LPF * 5] = {
+	      0.00000000f,   0.00000001f,   0.00000000f,   1.65957621f,  -0.68950193f,
+	      1.00000000f,   1.99963659f,   1.00011210f,   1.69975023f,  -0.73040038f,
+	      1.00000000f,   1.96916257f,   0.96963251f,   1.77933911f,  -0.81142441f,
+	      1.00000000f,   2.00036345f,   0.99988794f,   1.89528976f,  -0.92946590f
+	};
+float32_t Coeffs_notch_x[NUM_STAGES_GYRO_NOTCH * 5] = {
+	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f
+	};
+float32_t Coeffs_notch_y[NUM_STAGES_GYRO_NOTCH * 5] = {
+	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f
+	};
+float32_t Coeffs_notch_z[NUM_STAGES_GYRO_NOTCH * 5] = {
+	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f
+	};

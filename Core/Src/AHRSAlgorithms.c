@@ -18,7 +18,7 @@
 //#define Kp 2.0f * 5.0f
 //#define Ki 0.005f
 #define Kp 2.0f * 5.0f
-#define Ki 0.5f
+#define Ki 0.0f
 
 
 #define PI 3.14159265358979323f

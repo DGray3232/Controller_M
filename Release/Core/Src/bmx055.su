@@ -1,0 +1,14 @@
+../Core/Src/bmx055.c:87:9:BMX055_BMA_Init	48	static
+../Core/Src/bmx055.c:127:6:setFastOffset_BMA	48	static
+../Core/Src/bmx055.c:161:6:BMX055_Read_Accel	32	static
+../Core/Src/bmx055.c:171:6:BMX055_Read_Accel_DMA	16	static
+../Core/Src/bmx055.c:179:9:BMX055_BMG_Init	48	static
+../Core/Src/bmx055.c:220:6:setFastOffset_BMG	48	static
+../Core/Src/bmx055.c:236:6:BMX055_Read_Gyro	32	static
+../Core/Src/bmx055.c:245:6:BMX055_Read_Gyro_DMA	16	static
+../Core/Src/bmx055.c:253:9:BMX055_BMM_Init	56	static
+../Core/Src/bmx055.c:306:6:readADC	40	static
+../Core/Src/bmx055.c:333:6:setFastOffset_BMM	24	static
+../Core/Src/bmx055.c:361:6:BMX055_Read_Mag	8	static
+../Core/Src/bmx055.c:372:6:readADC_dma	32	static
+../Core/Src/bmx055.c:397:6:BMX055_Read_Mag_DMA	8	static
