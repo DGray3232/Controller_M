@@ -1,0 +1,242 @@
+[
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/main.c.o -c /root/Controller_M/Core/Src/main.c",
+  "file": "/root/Controller_M/Core/Src/main.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/main.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/gpio.c.o -c /root/Controller_M/Core/Src/gpio.c",
+  "file": "/root/Controller_M/Core/Src/gpio.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/gpio.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/dma.c.o -c /root/Controller_M/Core/Src/dma.c",
+  "file": "/root/Controller_M/Core/Src/dma.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/dma.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/i2c.c.o -c /root/Controller_M/Core/Src/i2c.c",
+  "file": "/root/Controller_M/Core/Src/i2c.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/i2c.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/tim.c.o -c /root/Controller_M/Core/Src/tim.c",
+  "file": "/root/Controller_M/Core/Src/tim.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/tim.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/usart.c.o -c /root/Controller_M/Core/Src/usart.c",
+  "file": "/root/Controller_M/Core/Src/usart.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/usart.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/stm32f4xx_it.c.o -c /root/Controller_M/Core/Src/stm32f4xx_it.c",
+  "file": "/root/Controller_M/Core/Src/stm32f4xx_it.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/stm32f4xx_it.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/stm32f4xx_hal_msp.c.o -c /root/Controller_M/Core/Src/stm32f4xx_hal_msp.c",
+  "file": "/root/Controller_M/Core/Src/stm32f4xx_hal_msp.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/stm32f4xx_hal_msp.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/sysmem.c.o -c /root/Controller_M/Core/Src/sysmem.c",
+  "file": "/root/Controller_M/Core/Src/sysmem.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/sysmem.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/syscalls.c.o -c /root/Controller_M/Core/Src/syscalls.c",
+  "file": "/root/Controller_M/Core/Src/syscalls.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/syscalls.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -o CMakeFiles/Controller_M.dir/startup_stm32f411xe.s.o -c /root/Controller_M/startup_stm32f411xe.s",
+  "file": "/root/Controller_M/startup_stm32f411xe.s",
+  "output": "CMakeFiles/Controller_M.dir/startup_stm32f411xe.s.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/vibration_analysis.c.o -c /root/Controller_M/Core/Src/vibration_analysis.c",
+  "file": "/root/Controller_M/Core/Src/vibration_analysis.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/vibration_analysis.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/AHRSAlgorithms.c.o -c /root/Controller_M/Core/Src/AHRSAlgorithms.c",
+  "file": "/root/Controller_M/Core/Src/AHRSAlgorithms.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/AHRSAlgorithms.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/bmx055.c.o -c /root/Controller_M/Core/Src/bmx055.c",
+  "file": "/root/Controller_M/Core/Src/bmx055.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/bmx055.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/mtf02.c.o -c /root/Controller_M/Core/Src/mtf02.c",
+  "file": "/root/Controller_M/Core/Src/mtf02.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/mtf02.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/optical_flow_compensation.c.o -c /root/Controller_M/Core/Src/optical_flow_compensation.c",
+  "file": "/root/Controller_M/Core/Src/optical_flow_compensation.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/optical_flow_compensation.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/pid.c.o -c /root/Controller_M/Core/Src/pid.c",
+  "file": "/root/Controller_M/Core/Src/pid.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/pid.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/globals.c.o -c /root/Controller_M/Core/Src/globals.c",
+  "file": "/root/Controller_M/Core/Src/globals.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/globals.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/median_moving_average_filter.c.o -c /root/Controller_M/Core/Src/median_moving_average_filter.c",
+  "file": "/root/Controller_M/Core/Src/median_moving_average_filter.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/median_moving_average_filter.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/calculate_notch_coeffs.c.o -c /root/Controller_M/Core/Src/calculate_notch_coeffs.c",
+  "file": "/root/Controller_M/Core/Src/calculate_notch_coeffs.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/calculate_notch_coeffs.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/Controller_M.dir/Core/Src/remote_control_mavlink.c.o -c /root/Controller_M/Core/Src/remote_control_mavlink.c",
+  "file": "/root/Controller_M/Core/Src/remote_control_mavlink.c",
+  "output": "CMakeFiles/Controller_M.dir/Core/Src/remote_control_mavlink.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Core/Src/system_stm32f4xx.c.o -c /root/Controller_M/Core/Src/system_stm32f4xx.c",
+  "file": "/root/Controller_M/Core/Src/system_stm32f4xx.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Core/Src/system_stm32f4xx.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c.o"
+},
+{
+  "directory": "/root/Controller_M/Debug/cmake/stm32cubemx",
+  "command": "/usr/bin/cc -DARM_MATH_CM4 -DDEBUG -DSTM32F411xE -DUSE_HAL_DRIVER -I/root/Controller_M/cmake/stm32cubemx/../../Core/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/Include -I/root/Controller_M/cmake/stm32cubemx/../../Drivers/CMSIS/DSP/Include -g -std=gnu11 -o CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c.o -c /root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c",
+  "file": "/root/Controller_M/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c",
+  "output": "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c.o"
+}
+]
