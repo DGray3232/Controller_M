@@ -26,16 +26,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "remote_control.h"
 #include "remote_control_mavlink.h"
 #include "config_param.h"
 #include "globals.h"
 #include "arm_math.h"
-#include "limits.h"
 #include "arm_const_structs.h"  // Для предопределенных структур БПФ
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
 #include "calculate_notch_coeffs.h"
@@ -80,7 +76,11 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Экспоненциальная кривая для сигнала пульта (из remote_control.c)
+static float expo_curve(float input, float expo_factor) {
+    return input * (1 - expo_factor) + input * input * input * expo_factor;
+}
+
 // Функция для добавления значения в кольцевой буфер x
 void add_to_x(float32_t value) {
 	Ax_fft[x_index] = value;
@@ -137,9 +137,8 @@ void update_coeff() {
     	     memset(filterState_Az_notch, 0, sizeof(filterState_Az_notch));
     	     arm_biquad_cascade_df2T_init_f32(&imu_Gz_notch, NUM_STAGES_GYRO_NOTCH, Coeffs_notch_z, filterState_Gz_notch);
     	     arm_biquad_cascade_df2T_init_f32(&imu_Az_notch, NUM_STAGES_ACCEL_NOTCH, Coeffs_notch_z, filterState_Az_notch);
-    	 }
-    	count_calculate_frequency = 0;
-    	count_calculate_frequency_flag = 0;
+	}
+	count_calculate_frequency_flag = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -255,17 +254,6 @@ int32_t trim_percent(int32_t base_value, int8_t percent)
 
 
 ///////////////////////////////////////////////////////////////////////////////////// фильтр махони ///////////////////////////////////////////////////////
-/*
-float round_to(float number) {
-    return round(number * 100) / 100;
-}
-*/
-float round_to_dec(float number) {
-    return round(number * 10) / 10;
-}
-double invert(double x){
-	return 0 - x;
-}
 static float invSqrt(float x) {
     float halfx = 0.5f * x;
     float y = x;
@@ -284,42 +272,12 @@ void get_angle_mahony(void){
 	  float filterGy = filtered_Gy*DEG_TO_RAD;
 	  float filterGz = filtered_Gz*DEG_TO_RAD;
 
-	  //filterAx = round_to(filterAx);
-	  //filterAy = round_to(filterAy);
-	  //filterAz = round_to(filterAz);
-	  //filterGx = round_to(filterGx);
-	  //filterGy = round_to(filterGy);
-	  //filterGz = round_to(filterGz);
-
 	  MahonyAHRSupdateIMU(filterAx, filterAy, filterAz, filterGx, filterGy, filterGz, CONTROL_LOOP_DT);
 
 	  Quat_actual[0] = (*(getQ()));
 	  Quat_actual[1] = (*(getQ()+1));
 	  Quat_actual[2] = (*(getQ()+2));
 	  Quat_actual[3] = (*(getQ()+3));
-
-	  float alpha = 1.0; // Коэффициент сглаживания (0 < alpha < 1)
-	  float dot = Quat_previous[0]*(*(getQ())) + Quat_previous[1]*(*(getQ()+1)) +
-	              Quat_previous[2]*(*(getQ()+2)) + Quat_previous[3]*(*(getQ()+3));
-	  if (dot < 0) {
-	      // Если скалярное произведение отрицательное, инвертируем новый кватернион
-	      Quat_actual[0] = alpha * (-*(getQ()))   + (1 - alpha) * Quat_previous[0];
-	      Quat_actual[1] = alpha * (-*(getQ()+1)) + (1 - alpha) * Quat_previous[1];
-	      Quat_actual[2] = alpha * (-*(getQ()+2)) + (1 - alpha) * Quat_previous[2];
-	      Quat_actual[3] = alpha * (-*(getQ()+3)) + (1 - alpha) * Quat_previous[3];
-	  }
-	  else {
-	      // иначе фильтруем как обычно
-	      Quat_actual[0] = alpha * (*(getQ()))   + (1 - alpha) * Quat_previous[0];
-	      Quat_actual[1] = alpha * (*(getQ()+1)) + (1 - alpha) * Quat_previous[1];
-	      Quat_actual[2] = alpha * (*(getQ()+2)) + (1 - alpha) * Quat_previous[2];
-	      Quat_actual[3] = alpha * (*(getQ()+3)) + (1 - alpha) * Quat_previous[3];
-	  }
-	  normalizeQuaternion(Quat_actual);
-	  Quat_previous[0] = Quat_actual[0];
-	  Quat_previous[1] = Quat_actual[1];
-	  Quat_previous[2] = Quat_actual[2];
-	  Quat_previous[3] = Quat_actual[3];
 
 	  float q0 = Quat_actual[0];
 	  float q1 = Quat_actual[1];
@@ -361,60 +319,6 @@ void normalizeQuaternion(float q[4]) {
     }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-/////////////////////////////////////////////////преобразование углов с пульта в целевой кватернион////////////////////////////////////////////////////////////
-
-void eulerToQuaternion(int joystick_x, int joystick_y, int right_left, float q[4]) {
-    // Преобразуем значения из диапазона 0-100 в радианы
-    float roll = (joystick_y / 100.0f) * M_PI;   // Поворот вокруг оси X
-    float pitch = (joystick_x / 100.0f) * M_PI;  // Поворот вокруг оси Y
-    float yaw = (right_left / 100.0f) * M_PI; // Поворот вокруг оси Z
-
-    // Вычисление половин углов
-    float cy = cos(yaw * 0.5);
-    float sy = sin(yaw * 0.5);
-    float cp = cos(pitch * 0.5);
-    float sp = sin(pitch * 0.5);
-    float cr = cos(roll * 0.5);
-    float sr = sin(roll * 0.5);
-
-    // Вычисление компонентов кватерниона и сохранение в массив
-    q[0] = cr * cp * cy + sr * sp * sy; // w
-    q[1] = sr * cp * cy - cr * sp * sy;// - 0.02; // x
-    q[2] = cr * sp * cy + sr * cp * sy;// - 0.02; // y
-    q[3] = cr * cp * sy - sr * sp * cy; // z
-
-    normalizeQuaternion(q);
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////вычисления кватерниона ошибки/////////////////////////////////////////////////////////////
-// Функция для вычисления обратного кватерниона
-void quat_inverse(float quat[4], float quat_inv[4]) {
-    // Обратный кватернион: [w, -x, -y, -z]
-    quat_inv[0] = quat[0];  // w
-    quat_inv[1] = -quat[1]; // -x
-    quat_inv[2] = -quat[2]; // -y
-    quat_inv[3] = -quat[3]; // -z
-}
-// Функция для умножения двух кватернионов
-void quat_multiply(float q1[4], float q2[4], float result[4]) {
-    result[0] = q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3]; // w
-    result[1] = q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2]; // x
-    result[2] = q1[0] * q2[2] - q1[1] * q2[3] + q1[2] * q2[0] + q1[3] * q2[1]; // y
-    result[3] = q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1] + q1[3] * q2[0]; // z
-}
-// Функция для вычисления ошибки между двумя кватернионами
-void quat_error(float  q_actual[4], float  q_actual_inv[4], float  q_target[4], float q_error[4]) {
-    // Вычисляем обратный кватернион
-    quat_inverse(q_actual, q_actual_inv);
-    // Вычисляем ошибку: q_error = Quat_target * Quat_actual^-1
-    quat_multiply(q_target, q_actual_inv, q_error);
-
-    normalizeQuaternion(q_error);
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-*/
 ////////////////////////////////////////////////////////////////// фильтрованные данные///////////////////////////////////////////////////////////////
 void get_filter_data_accel() {
 
@@ -543,29 +447,61 @@ HAL_StatusTypeDef I2C_Start_Read_accel(void) {
 //////////////////////////////////////////////////////////////////смещение imu///////////////////////////////////////////////////////////////
 
 void bias() {
-	for (int i = 0; i < BIAS_OFSET; i++) {
-		BMX055_Read_Gyro(&hi2c1, &BMX055);
-		float32_t gx = median_filter(BMX055.Gx, &Gyro_x_bias);
-		float32_t gy = median_filter(BMX055.Gy, &Gyro_y_bias);
-		float32_t gz = median_filter(BMX055.Gz, &Gyro_z_bias);
-		bias_Gx += gx;
-		bias_Gy += gy;
-		bias_Gz += gz;
-		BMX055_Read_Accel(&hi2c1, &BMX055);
-		float32_t ax = median_filter(BMX055.Ax, &Accel_x_ofset);
-		float32_t ay = median_filter(BMX055.Ay, &Accel_y_ofset);
-		float32_t az = median_filter(BMX055.Az, &Accel_z_ofset);
-		offset_Ax += ax;
-		offset_Ay += ay;
-		offset_Az += az;
-		HAL_Delay(1);
-	}
- bias_Gx = bias_Gx / BIAS_OFSET;
- bias_Gy = bias_Gy / BIAS_OFSET;
- bias_Gz = bias_Gz / BIAS_OFSET;
- offset_Ax = offset_Ax / BIAS_OFSET;
- offset_Ay = offset_Ay / BIAS_OFSET;
- offset_Az = (offset_Az / BIAS_OFSET) - 1;
+    float sum_gx = 0, sum_gy = 0, sum_gz = 0;
+    float sum_ax = 0, sum_ay = 0, sum_az = 0;
+    int valid_samples = 0;
+
+    for (int i = 0; i < BIAS_OFSET; i++) {
+        // === Гироскоп ===
+        BMX055_Read_Gyro(&hi2c1, &BMX055);
+        sum_gx += median_filter(BMX055.Gx, &Gyro_x_bias);
+        sum_gy += median_filter(BMX055.Gy, &Gyro_y_bias);
+        sum_gz += median_filter(BMX055.Gz, &Gyro_z_bias);
+
+        // === Акселерометр ===
+        BMX055_Read_Accel(&hi2c1, &BMX055);
+        float ax = median_filter(BMX055.Ax, &Accel_x_ofset);
+        float ay = median_filter(BMX055.Ay, &Accel_y_ofset);
+        float az = median_filter(BMX055.Az, &Accel_z_ofset);
+
+        // Проверка: magnitude должен быть близок к 1g (0.95–1.05)
+        // Это отбрасывает сэмплы, когда дрон двигали во время калибровки
+        float mag = sqrtf(ax*ax + ay*ay + az*az);
+        if (mag > 0.95f && mag < 1.05f) {
+            sum_ax += ax;
+            sum_ay += ay;
+            sum_az += az;
+            valid_samples++;
+        }
+
+        HAL_Delay(1);
+    }
+
+    // Усреднение гироскопа — всегда
+    bias_Gx = sum_gx / BIAS_OFSET;
+    bias_Gy = sum_gy / BIAS_OFSET;
+    bias_Gz = sum_gz / BIAS_OFSET;
+
+    // Усреднение акселерометра — только если достаточно валидных сэмплов
+    if (valid_samples > BIAS_OFSET / 2) {
+        offset_Ax = sum_ax / valid_samples;
+        offset_Ay = sum_ay / valid_samples;
+        offset_Az = (sum_az / valid_samples) - 1.0f;  // вычитаем 1g
+
+        // Проверка: дрон должен стоять достаточно ровно (X и Y ~ 0)
+        // Если offset_Ax или offset_Ay > 0.1g — значит дрон наклонён,
+        // и калибровка акселерометра будет неверной.
+        if (fabsf(offset_Ax) > 0.1f || fabsf(offset_Ay) > 0.1f) {
+            offset_Ax = 0.0f;
+            offset_Ay = 0.0f;
+            offset_Az = 0.0f;
+        }
+    } else {
+        // Слишком много отбракованных сэмплов — не калибруем акселерометр
+        offset_Ax = 0.0f;
+        offset_Ay = 0.0f;
+        offset_Az = 0.0f;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -610,7 +546,8 @@ void run_control_loop(){
 	data_ready_accel = 0;
 
 	count_calculate_frequency++;
-	if (count_calculate_frequency == 1000) {
+	if (count_calculate_frequency >= FFT_LEN) {
+		count_calculate_frequency = 0;
 		count_calculate_frequency_flag = 1;
 	}
     // Определяем режим полета по кнопке
@@ -626,14 +563,8 @@ void run_control_loop(){
     gyro_integration_update(&gyro_integration, filtered_Gx, filtered_Gy); // обновление гпроскопа - 1000 Гц
     process_optical_flow_data(&optical_flow_results,&gyro_integration,&lpf_mtf_x, &lpf_mtf_y,distance,flow_velocity_x, flow_velocity_y, pitch, roll); // обработка оптического потока 50 Гц
 	get_angle_mahony();  // получение кватернионов и углов
-    //eulerToQuaternion(joystick_x, joystick_y, right_left, Quat_target); // функция преобразования углов в кватернион
-	//quat_error(Quat_actual, Quat_actual_inv, Quat_target, Quat_error); // ошибка между текущим и целевым кватерниолном
 	throttle_mshot = ((potentiometer_value / 1000.0) * 2000.0) + 500;
 	max_pid_correction_mshot = MAX_CORRECTION;  //Ограничение пид-коррекции
-	//error_pitch_angle = round_to(Quat_error[2] * (-1)); // ошибка по углу тангажа знак ошибки изменен
-	//error_roll_angle = round_to(Quat_error[1]); // ошибка по углу крена
-	error_pitch_angle = (Quat_error[2] * (-1)); // ошибка по углу тангажа знак ошибки изменен
-	error_roll_angle = (Quat_error[1]); // ошибка по углу крена
 	//текущая угловая скорость
 	actual_velocity_pitch = (-filtered_Gy);
 	actual_velocity_roll = filtered_Gx;
@@ -762,7 +693,6 @@ void run_control_loop(){
 	        error_pitch_rate_D = target_velocity_pitch - actual_velocity_pitch_D;
 	        error_roll_rate_D = target_velocity_roll - actual_velocity_roll_D;
 	        error_yaw_rate_D = target_velocity_yaw - actual_velocity_yaw_D;
-	        flight_mode = FLIGHT_MODE_ACRO;
 	        break;
 	    }
 	}
@@ -794,10 +724,6 @@ void run_control_loop(){
 
 	if(button == 1 && potentiometer_value > 0){
 
-		//forse_pitch_rate = PID_2_Compute(&pitch_pid_rate, error_pitch_rate, error_pitch_rate_D);
-		//forse_roll_rate = PID_2_Compute(&roll_pid_rate, error_roll_rate, error_roll_rate_D);
-		//forse_yaw_rate = PID_2_Compute(&yaw_pid_rate, error_yaw_rate, error_yaw_rate_D);
-
 	   forse_pitch_rate = PID_DoM_Compute(&pitch_pid_rate_DoM, error_pitch_rate, actual_velocity_pitch_D, 0.001f);
 	   forse_roll_rate = PID_DoM_Compute(&roll_pid_rate_DoM, error_roll_rate, actual_velocity_roll_D, 0.001f);
 	   forse_yaw_rate = PID_DoM_Compute(&yaw_pid_rate_DoM, error_yaw_rate, actual_velocity_yaw_D, 0.001f);
@@ -809,32 +735,24 @@ void run_control_loop(){
 
 	   pid_correction_1 = forse_roll_rate + forse_pitch_rate + forse_yaw_rate;
 	   pid_correction_1 = constrain_float(pid_correction_1, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   //total_power_1 = throttle_mshot + pid_correction_1;// итоговая мощность левый передний мотор
-	   total_power_1 = final_throttle + pid_correction_1;// итоговая мощность левый передний мотор
-	   //total_power_1 = constrain(total_power_1 + TRIM_FRONT_LEFT, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	   total_power_1 = final_throttle + pid_correction_1;
 	   total_power_1 = constrain(trim_percent(total_power_1, TRIM_PERCENT_FRONT_LEFT),MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
 	   pid_correction_2 = -forse_roll_rate + forse_pitch_rate - forse_yaw_rate;
 	   pid_correction_2 = constrain_float(pid_correction_2, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   //total_power_2 = throttle_mshot + pid_correction_2;// итоговая мощность правый передний мотор
-	   total_power_2 = final_throttle + pid_correction_2;// итоговая мощность правый передний мотор
-	   //total_power_2 = constrain(total_power_2 + TRIM_FRONT_RIGHT, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	   total_power_2 = final_throttle + pid_correction_2;
 	   total_power_2 = constrain(trim_percent(total_power_2, TRIM_PERCENT_FRONT_RIGHT),MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
 	   pid_correction_3 = forse_roll_rate - forse_pitch_rate - forse_yaw_rate;
 	   pid_correction_3 = constrain_float(pid_correction_3, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   //total_power_3 = throttle_mshot + pid_correction_3;// итоговая мощность левый задний мотор
-	   total_power_3 = final_throttle + pid_correction_3;// итоговая мощность левый задний мотор
-	   //total_power_3 = constrain(total_power_3 + TRIM_REAR_LEFT, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	   total_power_3 = final_throttle + pid_correction_3;
 	   total_power_3 = constrain(trim_percent(total_power_3, TRIM_PERCENT_REAR_LEFT),MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
 	   pid_correction_4 = -forse_roll_rate - forse_pitch_rate + forse_yaw_rate;
 	   pid_correction_4 = constrain_float(pid_correction_4, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   //total_power_4 = throttle_mshot + pid_correction_4;// итоговая мощность правый задний мотор
-	   total_power_4 = final_throttle + pid_correction_4;// итоговая мощность правый задний мотор
-	   //total_power_4 = constrain(total_power_4 + TRIM_REAR_RIGHT, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	   total_power_4 = final_throttle + pid_correction_4;
 	   total_power_4 = constrain(trim_percent(total_power_4, TRIM_PERCENT_REAR_RIGHT),MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
-	   
+
        // Применяем экспонинциального сглаживания к каждому сигналу мотора
        filtered_power_1 = MOTOR_OUTPUT_FILTER_ALPHA * (int)total_power_1 + (1.0f - MOTOR_OUTPUT_FILTER_ALPHA) * filtered_power_1;
        filtered_power_2 = MOTOR_OUTPUT_FILTER_ALPHA * (int)total_power_2 + (1.0f - MOTOR_OUTPUT_FILTER_ALPHA) * filtered_power_2;
@@ -846,15 +764,6 @@ void run_control_loop(){
        filtered_power_4 = constrain_float(filtered_power_4, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 	   // Передаем на моторы уже отфильтрованные значения
 	   Motors_Set_Throttle((uint16_t)filtered_power_1,(uint16_t)filtered_power_2,(uint16_t)filtered_power_3,(uint16_t)filtered_power_4);
-	   
-	   /*
-       total_power_1 = constrain_float(total_power_1, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
-       total_power_2 = constrain_float(total_power_2, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
-       total_power_3 = constrain_float(total_power_3, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
-       total_power_4 = constrain_float(total_power_4, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
-	   Motors_Set_Throttle((uint16_t)total_power_1,(uint16_t)total_power_2,(uint16_t)total_power_3,(uint16_t)total_power_4);
-	   */
-	   //Motors_Set_Throttle(MAX_PULSE_WIDTH, MAX_PULSE_WIDTH, MAX_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
 	  } else {
 
@@ -928,7 +837,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   HAL_UART_Receive_DMA(&huart6, buffer_message_mtf02, MIKOLINL);
-  //HAL_UART_Receive_DMA(&huart1, buffer_message, DATA_SIZE); //для кастомного протокола remote_control
   MAV_Init(&huart1); //инициализация для протокола mavlink
 
   I2C_Bus_Reset(&hi2c1);
@@ -963,23 +871,6 @@ int main(void)
   arm_biquad_cascade_df2T_init_f32(&hpf_Az, NUM_STAGES_ACCEL_FFT, Coeffs_accel_hpf_fft, filterState_Az_hpf_fft);
 
 
-  //PID_2_Init(&pitch_pid_rate, PITCH_PID_KP, PITCH_PID_KI, PITCH_PID_KD, ALPHA, ALPHA_DERIVATIVE, INTEGRAL_LIMIT, SCALE_FACTOR);
-  //PID_2_Init(&roll_pid_rate, ROLL_PID_KP, ROLL_PID_KI, ROLL_PID_KD, ALPHA, ALPHA_DERIVATIVE, INTEGRAL_LIMIT, SCALE_FACTOR);
-  //PID_2_Init(&yaw_pid_rate, YAW_PID_KP, YAW_PID_KI, YAW_PID_KD, ALPHA, ALPHA_DERIVATIVE, INTEGRAL_LIMIT, SCALE_FACTOR);
-
-  //PID_Init(&pitch_pid_angle, PITCH_PID_KP_RATE, PITCH_PID_KI_RATE, PITCH_PID_KD_RATE, ALPHA_RATE, ALPHA_DERIVATIVE_RATE, INTEGRAL_LIMIT_RATE, SCALE_FACTOR_RATE);
-  //PID_Init(&roll_pid_angle, ROLL_PID_KP_RATE, ROLL_PID_KI_RATE, ROLL_PID_KD_RATE, ALPHA_RATE, ALPHA_DERIVATIVE_RATE, INTEGRAL_LIMIT_RATE, SCALE_FACTOR_RATE);
-
-  //PID_Init(&pitch_pid_mtf, PITCH_PID_KP_MTF, PITCH_PID_KI_MTF, PITCH_PID_KD_MTF, ALPHA_MTF, ALPHA_DERIVATIVE_MTF, INTEGRAL_LIMIT_MTF, SCALE_FACTOR_MTF);
-  //PID_Init(&roll_pid_mtf, ROLL_PID_KP_MTF, ROLL_PID_KI_MTF, ROLL_PID_KD_MTF, ALPHA_MTF, ALPHA_DERIVATIVE_MTF, INTEGRAL_LIMIT_MTF, SCALE_FACTOR_MTF);
-
-  //PID_DoM_Init(&pitch_pid_rate_DoM, PITCH_PID_KP_DoM, PITCH_PID_KI_DoM, PITCH_PID_KD_DoM, ALPHA_DoM, ALPHA_DERIVATIVE_DoM, INTEGRAL_LIMIT_DoM, SCALE_FACTOR_DoM);
-  //PID_DoM_Init(&roll_pid_rate_DoM, ROLL_PID_KP_DoM, ROLL_PID_KI_DoM, ROLL_PID_KD_DoM, ALPHA_DoM, ALPHA_DERIVATIVE_DoM, INTEGRAL_LIMIT_DoM, SCALE_FACTOR_DoM);
-  //PID_DoM_Init(&yaw_pid_rate_DoM, YAW_PID_KP_DoM, YAW_PID_KI_DoM, YAW_PID_KD_DoM, ALPHA_DoM, ALPHA_DERIVATIVE_DoM, INTEGRAL_LIMIT_DoM, SCALE_FACTOR_DoM);
-
-  //PID_DoM_Init(&pitch_pid_angle_DoM, PITCH_PID_KP_RATE_DoM, PITCH_PID_KI_RATE_DoM, PITCH_PID_KD_RATE_DoM, ALPHA_RATE_DoM, ALPHA_DERIVATIVE_RATE_DoM, INTEGRAL_LIMIT_RATE_DoM, SCALE_FACTOR_RATE_DoM);
-  //PID_DoM_Init(&roll_pid_angle_DoM, ROLL_PID_KP_RATE_DoM, ROLL_PID_KI_RATE_DoM, ROLL_PID_KD_RATE_DoM, ALPHA_RATE_DoM, ALPHA_DERIVATIVE_RATE_DoM, INTEGRAL_LIMIT_RATE_DoM, SCALE_FACTOR_RATE_DoM);
-
   PID_DoM_Init(&pitch_pid_mtf_DoM, PITCH_PID_KP_MTF_DoM, PITCH_PID_KI_MTF_DoM, PITCH_PID_KD_MTF_DoM, ALPHA_MTF_DoM, ALPHA_DERIVATIVE_MTF_DoM, INTEGRAL_LIMIT_MTF_DoM, SCALE_FACTOR_MTF_DoM);
   PID_DoM_Init(&roll_pid_mtf_DoM, ROLL_PID_KP_MTF_DoM, ROLL_PID_KI_MTF_DoM, ROLL_PID_KD_MTF_DoM, ALPHA_MTF_DoM, ALPHA_DERIVATIVE_MTF_DoM, INTEGRAL_LIMIT_MTF_DoM, SCALE_FACTOR_MTF_DoM);
 
@@ -1002,17 +893,12 @@ int main(void)
   HAL_I2C_DeInit(&hi2c1);
   MX_I2C1_Init();
 
-  last_time = HAL_GetTick();
-
   Motors_DMA_Init(); // инициализация DMA для моторов
 
   optical_flow_results_init(&optical_flow_results);
   memset(&gyro_integration, 0, sizeof(gyro_integration));
 
   HAL_TIM_Base_Start_IT(&htim11);
-
-  //CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-  //DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
   /* USER CODE END 2 */
 
@@ -1022,185 +908,9 @@ int main(void)
   {
 	MAV_Process();
 	MAV_Check_Connection(&huart1);
-	///////////////для кастомного протокола remote_control/////////////////////////////////
-	/*
-    check_connection_loss();
-    if (connection_lost == true) {
-    	connection_lost_flag = 1;
-    }
-	if (data_ready_flag == 1) {
-		receive_and_parse_data(DATA_SIZE); // получение сигналов управления
-		data_ready_flag = 0;
-	}
-	*/
-	////////////////////////////////////////////////////////////////////////////////////////
 	if (count_calculate_frequency_flag == 1) {
-		update_coeff();//Обновление коэффициентов для режекторного фильтра 1 раз в секунду
+		update_coeff();//Обновление коэффициентов режекторного фильтра каждые FFT_LEN сэмплов (~512 мс)
 	}
-	///////////////для кастомного протокола remote_control/////////////////////////////////
-	/*
-    if (connection_lost_flag == 1) {
-        HAL_UART_AbortReceive(&huart1);  // Принудительно остановить DMA
-    	MX_USART1_UART_Init();
-    	HAL_UART_Receive_DMA(&huart1, buffer_message, DATA_SIZE);
-    	receive_and_parse_data(DATA_SIZE);
-    	connection_lost_flag = 0;
-    }
-    */
-	/////////////////////////////////////////////////////////////////////////////////////////
-	  //snprintf(buf, sizeof(buf),"freq %f\n",freq);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"distance %lu,distance_strength %d,distance_precision %d,distance_status %d,flow_velocity_x %d,flow_velocity_y %d,flow_quality %d,flow_status %d\n",
-	  //distance,distance_strength,distance_precision,distance_status,flow_velocity_x,flow_velocity_y,flow_quality,flow_status);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
- //snprintf(buf, sizeof(buf),"button_2 %d,button %d,potentiometer_value %d,joystick_x %d,joystick_y %d,right_left %d,pitch %f,roll %f,distance %lu\n",
- //button_2,button,potentiometer_value,joystick_x,joystick_y,right_left,pitch,roll,distance);
- //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-    //snprintf(buf, sizeof(buf),"current_time %d,last_received_time %d,potentiometer_value %d\n",current_time,last_received_time,potentiometer_value);
-    //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"distance_metr %f\n",distance_metr);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"throttle_altitude_correction %f\n",throttle_altitude_correction);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-	  
-	  //snprintf(buf, sizeof(buf),"gyro_x %f,gyro_y %f,mtf_x %f,mtf_y %f\n",gyro_x,gyro_y,mtf_x,mtf_y);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
- //snprintf(buf, sizeof(buf),"vibration_frequency_x %f,vibration_frequency_y %f,vibration_frequency_z %f\n",vibration_frequency_x,vibration_frequency_y,vibration_frequency_z);
- //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"freq %f\n",freq);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"final_throttle %f\n",final_throttle);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"target_velocity_pitch %f,target_velocity_roll %f,error_pitch_rate %f,error_roll_rate %f\n",
-	  //target_velocity_pitch,target_velocity_roll,error_pitch_rate,error_roll_rate);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"flow_velocity_x %d,flow_velocity_y %d\n",flow_velocity_x,flow_velocity_y);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"flow_velocity_y %d,speed_cm_s_y %f\n",flow_velocity_y,optical_flow_results.speed_cm_s_y);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"speed_cm_s_y %f,speed_cm_s_x %f\n",optical_flow_results.speed_cm_s_y,optical_flow_results.speed_cm_s_x);
-  	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"error_pitch_rate %f,error_roll_rate %f\n",error_pitch_rate,error_roll_rate);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"error_pitch_mtf %f,error_roll_mtf %f\n",error_pitch_mtf,error_roll_mtf);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"V_linear_y_gyro %f,V_linear_x_gyro %f\n",V_linear_y_gyro,V_linear_x_gyro);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"V_linear_y_gyro %f,speed_cm_s_y %f\n",V_linear_y_gyro,speed_cm_s_y);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-  	  //snprintf(buf, sizeof(buf),"speed_cm_s_y %f,speed_cm_s_x %f\n",optical_flow_results.speed_cm_s_y,optical_flow_results.speed_cm_s_x);
-  	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"V_linear_x_gyro %f,V_linear_x_mtf %f\n",V_linear_x_gyro,V_linear_x_mtf);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"speed_cm_s_y %f,speed_cm_s_x %f\n",speed_cm_s_y,speed_cm_s_x);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"speed_cm_s_y %f,speed_cm_s_x %f\n",optical_flow_results.speed_cm_s_y,optical_flow_results.speed_cm_s_x);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"actual_velocity_roll %f,speed_cm_s_x %f\n",actual_velocity_roll,speed_cm_s_x);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"actual_velocity_pitch %f,error_pitch_mtf %f\n",actual_velocity_pitch,error_pitch_mtf);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-//snprintf(buf, sizeof(buf),"target_velocity_pitch %f,target_velocity_roll %f,error_pitch_mtf %f,error_roll_mtf %f\n",
-//target_velocity_pitch,target_velocity_roll,error_pitch_mtf,error_roll_mtf);
-//HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"total_power_1 %d,total_power_2 %d,total_power_3 %d,total_power_4 %d\n",total_power_1,total_power_2,total_power_3,total_power_4);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"error_pitch_mtf %f,error_roll_mtf %f\n",error_pitch_mtf,error_roll_mtf);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"button %d,potentiometer_value %d,joystick_x %d,joystick_y %d,right_left %d,pitch %f,roll %f,yaw %f\n",
-	  //button,potentiometer_value,joystick_x,joystick_y,right_left,pitch,roll,yaw);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-  //snprintf(buf, sizeof(buf),"button_2 %d,button %d,potentiometer_value %d,joystick_x %d,joystick_y %d,right_left %d,pitch %f,roll %f,yaw %f\n",
-  //button_2,button,potentiometer_value,joystick_x,joystick_y,right_left,pitch,roll,yaw);
-  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"filter_Gx %f,filter_Gy %f,filter_Gz %f\n",filtered_Gx,filtered_Gy,filtered_Gz);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"filter_Gx_final %f,filter_Gy_final %f,filter_Gz_final %f\n",filter_Gx_final,filter_Gy_final,filter_Gz_final);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"target_velocity_pitch %f,target_velocity_roll %f,target_velocity_yaw %f\n",target_velocity_pitch,target_velocity_roll,target_velocity_yaw);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"Ax_temp %f,filter_Ax_temp %f\n",Gx_temp[0],filter_Gx_temp[0]);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"Ax %f,filter_Ax %f\n",Ax[0],filter_Ax[0]);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"throttle_mshot %d\n",throttle_mshot);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"Gx %f,filter_Gx %f\n",Gx[0],filtered_Gx);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"Gx %f,filter_Gx_final %f\n",Gx[0],filter_Gx_final);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"filter_Gx_final %f,filter_Gx %f\n",filter_Gx_final,filtered_Gx);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"Gx %f,filter_Gx %f\n",Gx[0],filtered_Gx_D);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"error_pitch_rate %f,error_roll_rate %f,error_yaw_rate %f\n",error_pitch_rate,error_roll_rate,error_yaw_rate);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"actual_velocity_pitch %f,actual_velocity_roll %f,actual_velocity_yaw %f,error_pitch_rate %f,error_roll_rate %f,error_yaw_rate %f\n",
-	  //actual_velocity_pitch,actual_velocity_roll,actual_velocity_yaw,error_pitch_rate,error_roll_rate,error_yaw_rate);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"actual_velocity_pitch %f,actual_velocity_roll %f,optical_flow_results.speed_cm_s_y %f,optical_flow_results.speed_cm_s_x %f\n",
-	  //actual_velocity_pitch,actual_velocity_roll,optical_flow_results.speed_cm_s_y,optical_flow_results.speed_cm_s_x);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"error_pitch_rate %f,error_roll_rate %f,error_yaw_rate %f\n",error_pitch_rate,error_roll_rate,error_yaw_rate);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"button %d,forse_pitch_rate %d,forse_roll_rate %d,forse_yaw_rate %d\n",button,forse_pitch_rate,forse_roll_rate,forse_yaw_rate);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //nprintf(buf, sizeof(buf),"button %d,potentiometer_value %d,filtered_power_1 %d,filtered_power_2 %d,filtered_power_3 %d,filtered_power_4 %d\n",
-	  //button,potentiometer_value,filtered_power_1,filtered_power_2,filtered_power_3,filtered_power_4);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"target_velocity_pitch %f,target_velocity_roll %f,target_velocity_yaw %f\n",target_velocity_pitch,target_velocity_roll,target_velocity_yaw);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-	  //snprintf(buf, sizeof(buf),"target_velocity_yaw %f\n",target_velocity_yaw);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
-
-	  //snprintf(buf, sizeof(buf),"flow_velocity_x %d,flow_velocity_y %d\n",flow_velocity_x,flow_velocity_y);
-	  //HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
 
     /* USER CODE END WHILE */
 
@@ -1262,16 +972,21 @@ void SystemClock_Config(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
    if (htim == &htim11) {
-       // 1. Проверяем состояние HAL
+       // 1. Если данные с обоих датчиков IMU готовы — запускаем цикл управления
+       //    run_control_loop() сама сбросит data_ready_gyro и data_ready_accel в 0
+       if (data_ready_gyro && data_ready_accel) {
+           run_control_loop();
+       }
+
+       // 2. Проверяем состояние I2C шины
        if (HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
            // Сбрасываем счетчик таймаута, так как шина жива
            i2c_timeout_counter = 0;
-           // Пытаемся запустить чтение
-           if (I2C_Start_Read_gyro() != HAL_OK) {
-           }
+           // Пытаемся запустить чтение гироскопа
+           I2C_Start_Read_gyro();
        }
        else {
-           // 2. Шина ЗАНЯТА (BUSY)
+           // Шина ЗАНЯТА (BUSY)
            i2c_timeout_counter++;
            // Если шина занята более 5 циклов (5 мс) - это зависание.
            // При 400кГц транзакция длится < 1мс.
@@ -1283,7 +998,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
        }
    }
 }
-// Колбэк завершения приема DMA
+// Колбэк завершения приема DMA — только парсинг данных и флаги
+// Вызов run_control_loop() перенесён в HAL_TIM_PeriodElapsedCallback (TIM11)
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
    if (hi2c->Instance == hi2c1.Instance) {
        if (current_device == 0) {
@@ -1291,16 +1007,14 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
            BMX055_Process_Gyro_Raw(&BMX055, dma_gyro_buffer);
            data_ready_gyro = 1;
            // 2. Запускаем акселерометр
-           if (I2C_Start_Read_accel() != HAL_OK) {
-               // Если запуск не удался, цепочка разорвана.
-           }
+           I2C_Start_Read_accel();
        }
        else if (current_device == 1) {
-           // 3. Данные акселерометра получены
+           // 3. Данные акселерометра получены — только парсинг
            BMX055_Process_Accel_Raw(&BMX055, dma_accel_buffer);
            data_ready_accel = 1;
-           // 4. Запускаем расчеты
-           run_control_loop();
+           // run_control_loop() больше НЕ вызывается здесь!
+           // Он выполняется в контексте TIM11, при наличии обоих флагов.
        }
    }
 }
@@ -1309,22 +1023,6 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
        current_device = 0;
    }
 }
-///////////////для кастомного протокола remote_control/////////////////////////////////
-/*
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-    if (huart == &huart1) {
-    	data_ready_flag = 1;
-    }
-}
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart){
-    if (huart == &huart1) {
-    	connection_lost_flag = 1;
-    }
-}
-*/
-//////////////////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /* USER CODE END 4 */
 

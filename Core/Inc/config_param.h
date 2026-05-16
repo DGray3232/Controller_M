@@ -8,9 +8,7 @@
 #define DEG_TO_RAD  0.017453292519943295769236907684886
 #define RAD_TO_DEG (180.0f / M_PI)
 
-/* --- Настройки фильтров (Ступени) --- */
-#define NUM_STAGES_ACCEL 18
-#define NUM_STAGES_GYRO 16
+/* --- Настройки фильтров --- */
 #define NUM_STAGES_D_GYRO_LPF 2
 #define NUM_STAGES_ACCEL_FFT 2
 #define BLOCK_SIZE 1 // Размер блока данных для обработки
@@ -25,92 +23,35 @@
 #define F_SAMPLE 1000   // Частота дискретизации, Гц
 #define FREQ_HYSTERESIS 2.0f // гистерезис для изменении частоты
 
-/* --- Параметры системы и протоколов --- */
+/* --- Параметры системы --- */
 #define CONTROL_LOOP_DT 0.001f // 1000 Гц
-#define DATA_SIZE             14
-#define CONNECTION_TIMEOUT_MS 100    // Таймаут потери связи (мс)
 #define BIAS_OFSET 1024
 #define MIKOLINL 27
 
 /* --- Multishot и моторы --- */
-#define MULTISHOT_MIN 500      // Минимальная длительность импульса (мкс)
-#define MULTISHOT_MAX 2500     // Максимальная длительность импульса (мкс)
-#define MIN_PULSE_WIDTH       500    // Минимальная ширина импульса
-#define MAX_PULSE_WIDTH       2500   // Максимальная ширина импульса
-#define MOTOR_OUTPUT_FILTER_ALPHA 0.5f // Коэффициент сглаживания (0.0 - 1.0)
+#define MULTISHOT_MIN 500
+#define MULTISHOT_MAX 2500
+#define MIN_PULSE_WIDTH       500
+#define MAX_PULSE_WIDTH       2500
+#define MOTOR_OUTPUT_FILTER_ALPHA 0.5f
 
 /* --- Ограничения (Safety Limits) --- */
-#define MAX_CORRECTION        500    // Ограничение пид-коррекции
-#define MAX_PID_RATE          1500   // Ограничение пид-сигнала
-#define MAX_P                 150    // Ограничение п-сигнала
-#define MAX_P_MTF             100    // Ограничение п-сигнала
+#define MAX_CORRECTION        500
+#define MAX_PID_RATE          1500
+#define MAX_P                 150
 
-/* --- Триммирование (Trims) --- */
-#define TRIM_ROLL_ERROR  0.0f
-#define TRIM_PITCH_ERROR 0.0f
-#define TRIM_YAW_ERROR   0.0f
-
-#define TRIM_ROLL_ERROR_RATE  0.0f
-#define TRIM_PITCH_ERROR_RATE 0.0f
-#define TRIM_YAW_ERROR_RATE   0.0f
-
-#define TRIM_FRONT_LEFT  10.0f
-#define TRIM_FRONT_RIGHT 0.0f
-#define TRIM_REAR_LEFT   50.0f
-#define TRIM_REAR_RIGHT  40.0f
-
-#define TRIM_PERCENT_FRONT_LEFT   0   // -+%
-#define TRIM_PERCENT_FRONT_RIGHT  0   // -+%
-#define TRIM_PERCENT_REAR_LEFT    5   // -+%
-#define TRIM_PERCENT_REAR_RIGHT   1   // -+%
-
+/* --- Триммирование (процентов) --- */
+#define TRIM_PERCENT_FRONT_LEFT   0
+#define TRIM_PERCENT_FRONT_RIGHT  0
+#define TRIM_PERCENT_REAR_LEFT    5
+#define TRIM_PERCENT_REAR_RIGHT   1
 
 /* --- Режимы полета --- */
 #define FLIGHT_MODE_ANGLE 0
 #define FLIGHT_MODE_ACRO  1
-#define FLIGHT_MODE_MTF   2  // режим оптического потока
+#define FLIGHT_MODE_MTF   2
 
-/* --- Настройки PID регуляторов --- */
-// PID Angle (ACRO/RATE)
-#define PITCH_PID_KP          18.0
-#define PITCH_PID_KI          0.0
-#define PITCH_PID_KD          0.638
-#define ROLL_PID_KP           18.0
-#define ROLL_PID_KI           0.0
-#define ROLL_PID_KD           0.638
-#define YAW_PID_KP            25.0
-#define YAW_PID_KI            0.0
-#define YAW_PID_KD            0.8
-#define ALPHA                 0.1
-#define ALPHA_DERIVATIVE      0.1
-#define INTEGRAL_LIMIT        5.0
-#define SCALE_FACTOR          1.0
-
-// PID Rate
-#define PITCH_PID_KP_RATE     10.0
-#define PITCH_PID_KI_RATE     0.0
-#define PITCH_PID_KD_RATE     0.1
-#define ROLL_PID_KP_RATE      10.0
-#define ROLL_PID_KI_RATE      0.0
-#define ROLL_PID_KD_RATE      0.1
-#define ALPHA_RATE            1.0
-#define ALPHA_DERIVATIVE_RATE 0.1
-#define INTEGRAL_LIMIT_RATE   5.0
-#define SCALE_FACTOR_RATE     1.0
-
-// PID MTF (Optical Flow)
-#define PITCH_PID_KP_MTF      0.5
-#define PITCH_PID_KI_MTF      0.0
-#define PITCH_PID_KD_MTF      0.011
-#define ROLL_PID_KP_MTF       0.5
-#define ROLL_PID_KI_MTF       0.0
-#define ROLL_PID_KD_MTF       0.011
-#define ALPHA_MTF             1.0
-#define ALPHA_DERIVATIVE_MTF  0.1
-#define INTEGRAL_LIMIT_MTF    5.0
-#define SCALE_FACTOR_MTF      1.0
-
-// PID Angle (ACRO/RATE)
+/* --- PID регуляторы (DoM) --- */
 #define PITCH_PID_KP_DoM          0.8
 #define PITCH_PID_KI_DoM          0.01
 #define PITCH_PID_KD_DoM          0.05
@@ -125,7 +66,6 @@
 #define INTEGRAL_LIMIT_DoM        5.0
 #define SCALE_FACTOR_DoM          1.0
 
-// PID Rate
 #define PITCH_PID_KP_RATE_DoM     11.5
 #define PITCH_PID_KI_RATE_DoM     0.1
 #define PITCH_PID_KD_RATE_DoM     0.1
@@ -140,7 +80,6 @@
 #define INTEGRAL_LIMIT_RATE_DoM   5.0
 #define SCALE_FACTOR_RATE_DoM     1.0
 
-// PID MTF (Optical Flow)
 #define PITCH_PID_KP_MTF_DoM      0.4
 #define PITCH_PID_KI_MTF_DoM      0.1 
 #define PITCH_PID_KD_MTF_DoM      0.02
@@ -152,7 +91,7 @@
 #define INTEGRAL_LIMIT_MTF_DoM    5.0
 #define SCALE_FACTOR_MTF_DoM      1.0
 
-// Параметры ПИД высоты 
+/* --- ПИД высоты --- */
 #define ALTITUDE_PID_KP           25.0 
 #define ALTITUDE_PID_KI           0.1 
 #define ALTITUDE_PID_KD           0.1 
@@ -160,6 +99,6 @@
 #define ALTITUDE_ALPHA            1.0
 #define ALTITUDE_ALPHA_DERIVATIVE 0.1
 #define ALTITUDE_SCALE_FACTOR     1.0
-#define ALTITUDE_MAX_CORRECTION   100.0   // максимальная добавка к газу
+#define ALTITUDE_MAX_CORRECTION   100.0
 
 #endif /* CONFIG_PARAM_H */

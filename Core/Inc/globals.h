@@ -30,11 +30,13 @@ extern PID_2_Controller pitch_pid_rate;
 extern PID_2_Controller roll_pid_rate;
 extern PID_2_Controller yaw_pid_rate;
 
-extern PID_Controller pitch_pid_angle;
-extern PID_Controller roll_pid_angle;
-
-extern PID_Controller pitch_pid_mtf;
-extern PID_Controller roll_pid_mtf;
+extern PID_Controller altitude_pid;
+extern float target_altitude_mm;
+extern float altitude_error_mm;
+extern float throttle_altitude_correction;
+extern bool altitude_hold_active;
+extern bool last_button_2_state;
+extern float final_throttle;
 
 extern PID_DoM_Controller pitch_pid_rate_DoM;
 extern PID_DoM_Controller roll_pid_rate_DoM;
@@ -45,14 +47,6 @@ extern PID_DoM_Controller roll_pid_angle_DoM;
 
 extern PID_DoM_Controller pitch_pid_mtf_DoM;
 extern PID_DoM_Controller roll_pid_mtf_DoM;
-
-extern PID_Controller altitude_pid;
-extern float target_altitude_mm;      // целевая высота в мм
-extern float altitude_error_mm;        // ошибка высоты в мм
-extern float throttle_altitude_correction; // коррекция тяги от ПИД высоты
-extern bool altitude_hold_active;     // флаг активности удержания высоты
-extern bool last_button_2_state;      // для детектирования фронта кнопки
-extern float final_throttle;
 
 /* --- Фильтры (Медианные и LPF) --- */
 extern MedianFilter Gyro_x;
@@ -101,40 +95,20 @@ extern arm_biquad_cascade_df2T_instance_f32 hpf_Az;
 extern arm_rfft_fast_instance_f32 fft_params;
 
 /* --- Переменные состояния и управления --- */
-extern char buf[250];
-/*
-extern int joystick_x; //для кастомного протокола remote_control
-extern int joystick_y;
-extern int potentiometer_value;
-extern int right_left;
-extern int button;
-extern int button_2;
-*/
 extern int16_t joystick_x;
 extern int16_t joystick_y;
 extern int16_t right_left;
 extern uint16_t potentiometer_value;
 extern uint16_t button;
 extern uint16_t button_2;
-extern uint8_t prev_button_2;
 
 extern bool mavlink_connection_active;
 extern uint32_t mav_last_packet_time;
-extern int received_checksum, calculated_checksum;
-extern uint8_t buffer_message[DATA_SIZE];
-
-extern uint32_t last_received_time;
-extern uint32_t current_time;
-extern bool connection_lost;
-extern int connection_lost_flag;
 
 /* --- Данные IMU и вычисления --- */
 extern float32_t Ax[1];
 extern float32_t Ay[1];
 extern float32_t Az[1];
-extern float32_t filter_Ax[1];
-extern float32_t filter_Ay[1];
-extern float32_t filter_Az[1];
 extern float32_t offset_Ax;
 extern float32_t offset_Ay;
 extern float32_t offset_Az;
@@ -151,9 +125,6 @@ extern float32_t Gz[1];
 extern float32_t bias_Gx;
 extern float32_t bias_Gy;
 extern float32_t bias_Gz;
-extern float32_t filter_Gx[1];
-extern float32_t filter_Gy[1];
-extern float32_t filter_Gz[1];
 extern float32_t filter_Gx_D_lpf[1];
 extern float32_t filter_Gy_D_lpf[1];
 extern float32_t filter_Gz_D_lpf[1];
@@ -206,8 +177,6 @@ extern float error_roll_angle;
 
 extern float error_pitch_mtf;
 extern float error_roll_mtf;
-extern float error_pitch_mtf_D;
-extern float error_roll_mtf_D;
 
 extern int forse_pitch_rate;
 extern int forse_roll_rate;
@@ -218,10 +187,6 @@ extern float max_pid_correction_mshot;
 
 extern float pitch, yaw, roll;
 extern float Quat_actual[4];
-extern float Quat_target[4];
-extern float Quat_actual_inv[4];
-extern float Quat_error[4];
-extern float Quat_previous[4];
 
 /* --- Моторы --- */
 extern float pid_correction_1;
@@ -291,9 +256,8 @@ extern uint8_t flight_mode;
 extern int button_mode;
 extern uint8_t active_mode;
 
-extern uint32_t last_cycle_time;
-extern float freq;
 extern int count_calculate_frequency;
+extern uint32_t count_calculate_frequency_flag;
 
 /* --- Буферы I2C DMA --- */
 extern uint8_t dma_accel_buffer[7];
@@ -305,11 +269,6 @@ extern volatile uint8_t data_ready_gyro;
 extern volatile uint8_t data_ready_accel;
 extern volatile uint8_t i2c_busy_flag;
 extern uint32_t i2c_timeout_counter;
-extern uint32_t count_calculate_frequency_flag;
-extern int data_ready_flag;
-
-/* --- Добавлено, так как пропущено ранее --- */
-extern uint32_t last_time;
 
 /* --- Внутренние буферы фильтров --- */
 extern float fft_output_buffer[FFT_LEN * 2];

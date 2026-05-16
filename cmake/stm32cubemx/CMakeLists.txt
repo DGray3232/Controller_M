@@ -42,7 +42,6 @@ set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/globals.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/median_moving_average_filter.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/calculate_notch_coeffs.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/remote_control.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/remote_control_mavlink.c
 
 )

@@ -10,30 +10,13 @@ PID_2_Controller pitch_pid_rate;
 PID_2_Controller roll_pid_rate;
 PID_2_Controller yaw_pid_rate;
 
-PID_Controller pitch_pid_angle;
-PID_Controller roll_pid_angle;
-
-PID_Controller pitch_pid_mtf;
-PID_Controller roll_pid_mtf;
-
-PID_DoM_Controller pitch_pid_rate_DoM;
-PID_DoM_Controller roll_pid_rate_DoM;
-PID_DoM_Controller yaw_pid_rate_DoM;
-
-PID_DoM_Controller pitch_pid_angle_DoM;
-PID_DoM_Controller roll_pid_angle_DoM;
-
-PID_DoM_Controller pitch_pid_mtf_DoM;
-PID_DoM_Controller roll_pid_mtf_DoM;
-
 PID_Controller altitude_pid;
-float target_altitude_mm = 0.0f;      // целевая высота в мм
-float altitude_error_mm = 0.0f;        // ошибка высоты в мм
-float throttle_altitude_correction = 0.0f; // коррекция тяги от ПИД высоты
-bool altitude_hold_active = false;     // флаг активности удержания высоты
-bool last_button_2_state = false;      // для детектирования фронта кнопки
+float target_altitude_mm = 0.0f;
+float altitude_error_mm = 0.0f;
+float throttle_altitude_correction = 0.0f;
+bool altitude_hold_active = false;
+bool last_button_2_state = false;
 float final_throttle = 0;
-
 
 MedianFilter Gyro_x = {0};
 MedianFilter Gyro_y = {0};
@@ -51,6 +34,18 @@ MedianFilter Accel_z_ofset = {0};
 Filter_lpf lpf_mtf_y;
 Filter_lpf lpf_mtf_x;
 
+// PID-регуляторы DoM (основные)
+PID_DoM_Controller pitch_pid_rate_DoM;
+PID_DoM_Controller roll_pid_rate_DoM;
+PID_DoM_Controller yaw_pid_rate_DoM;
+
+PID_DoM_Controller pitch_pid_angle_DoM;
+PID_DoM_Controller roll_pid_angle_DoM;
+
+PID_DoM_Controller pitch_pid_mtf_DoM;
+PID_DoM_Controller roll_pid_mtf_DoM;
+
+// CMSIS-DSP фильтры
 arm_biquad_cascade_df2T_instance_f32 imu_Gx_lpf;
 arm_biquad_cascade_df2T_instance_f32 imu_Gx_notch;
 arm_biquad_cascade_df2T_instance_f32 imu_Gy_lpf;
@@ -79,39 +74,21 @@ arm_biquad_cascade_df2T_instance_f32 hpf_Az;
 
 arm_rfft_fast_instance_f32 fft_params;
 
-char buf[250];
-/*
-int joystick_x = 0; //для кастомного протокола remote_control
-int joystick_y = 0;
-int potentiometer_value = 0;
-int right_left = 0;
-int button = 0;
-int button_2 = 0;
-*/
+// Данные с пульта (MAVLink)
 int16_t joystick_x = 0;
 int16_t joystick_y = 0;
 uint16_t potentiometer_value = 0;
 int16_t right_left = 0;
 uint16_t button = 0;
 uint16_t button_2 = 0;
-uint8_t prev_button_2 = 0;
 
 bool mavlink_connection_active = false;
 uint32_t mav_last_packet_time = 0;
-int received_checksum, calculated_checksum = 0;
-uint8_t buffer_message[DATA_SIZE] = {0};
 
-uint32_t last_received_time = 0;
-uint32_t current_time = 0;
-bool connection_lost = false;
-int connection_lost_flag = 0;
-
+// Данные IMU
 float32_t Ax[1] = {0};
 float32_t Ay[1] = {0};
 float32_t Az[1] = {0};
-float32_t filter_Ax[1] = {0};
-float32_t filter_Ay[1] = {0};
-float32_t filter_Az[1] = {0};
 float32_t offset_Ax = {0};
 float32_t offset_Ay = {0};
 float32_t offset_Az = {0};
@@ -128,9 +105,6 @@ float32_t Gz[1] = {0};
 float32_t bias_Gx = {0};
 float32_t bias_Gy = {0};
 float32_t bias_Gz = {0};
-float32_t filter_Gx[1] = {0};
-float32_t filter_Gy[1] = {0};
-float32_t filter_Gz[1] = {0};
 float32_t filter_Gx_D_lpf[1] = {0};
 float32_t filter_Gy_D_lpf[1] = {0};
 float32_t filter_Gz_D_lpf[1] = {0};
@@ -194,10 +168,6 @@ float max_pid_correction_mshot = 0;
 
 float pitch = 0.0f, yaw = 0.0f, roll = 0.0f;
 float Quat_actual[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-float Quat_target[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-float Quat_actual_inv[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-float Quat_error[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-float Quat_previous[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 
 float pid_correction_1 = 0;
 float pid_correction_2 = 0;
@@ -218,6 +188,7 @@ int filtered_power_2 = MIN_PULSE_WIDTH;
 int filtered_power_3 = MIN_PULSE_WIDTH;
 int filtered_power_4 = MIN_PULSE_WIDTH;
 
+// FFT и анализ вибраций
 float32_t Ax_fft[FFT_LEN] = {0};
 float32_t Ay_fft[FFT_LEN] = {0};
 float32_t Az_fft[FFT_LEN] = {0};
@@ -250,6 +221,7 @@ float previous_freq_x = 0;
 float previous_freq_y = 0;
 float previous_freq_z = 0;
 
+// Данные MTF-02 (оптический поток + дальномер)
 uint8_t buffer_message_mtf02[MIKOLINL];
 
 uint32_t distance = 0;
@@ -261,13 +233,13 @@ int16_t flow_velocity_y = 0;
 uint8_t flow_quality = 0;
 uint8_t flow_status = 0;
 
+// Режимы и флаги
 uint8_t flight_mode = FLIGHT_MODE_ACRO;
 int button_mode = 0;
 uint8_t active_mode = 0;
 
-uint32_t last_cycle_time = 0;
-float freq = 0;
 int count_calculate_frequency = 0;
+uint32_t count_calculate_frequency_flag = 0;
 
 uint8_t dma_accel_buffer[7];
 uint8_t dma_gyro_buffer[6];
@@ -277,9 +249,6 @@ volatile uint8_t data_ready_gyro = 0;
 volatile uint8_t data_ready_accel = 0;
 volatile uint8_t i2c_busy_flag = 0;
 uint32_t i2c_timeout_counter = 0;
-uint32_t count_calculate_frequency_flag = 0;
-int data_ready_flag = 0;
-uint32_t last_time = 0; // Добавлено
 
 float fft_output_buffer[FFT_LEN * 2];
 float fft_magnitude_buffer[FFT_LEN / 2];
@@ -311,41 +280,41 @@ float32_t filterState_Ay_hpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
 float32_t filterState_Az_hpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
 
 float32_t Coeffs_D_Gyro_lpf[NUM_STAGES_D_GYRO_LPF * 5] = {
-	      0.00080636f,   0.00161272f,   0.00080636f,   1.38761971f,  -0.49242289f,
-	      1.00000000f,   2.00000003f,   0.99999999f,   1.62993553f,  -0.75304017f
-	};
+      0.00080636f,   0.00161272f,   0.00080636f,   1.38761971f,  -0.49242289f,
+      1.00000000f,   2.00000003f,   0.99999999f,   1.62993553f,  -0.75304017f
+};
 
 float32_t Coeffs_accel_lpf_fft[NUM_STAGES_ACCEL_FFT * 5] = {
-	      0.43284664f,   0.86569330f,   0.43284664f,  -1.04859958f,  -0.29614036f,
-	      1.00000000f,   1.99999997f,   1.00000001f,  -1.32091343f,  -0.63273879f
-	};
+      0.43284664f,   0.86569330f,   0.43284664f,  -1.04859958f,  -0.29614036f,
+      1.00000000f,   1.99999997f,   1.00000001f,  -1.32091343f,  -0.63273879f
+};
 
 float32_t Coeffs_accel_hpf_fft[NUM_STAGES_ACCEL_FFT * 5] = {
-		  0.95978223f,  -1.91956449f,   0.95978222f,   1.94263823f,  -0.94359728f,
-	      1.00000000f,  -1.99999997f,   1.00000001f,   1.97526963f,  -0.97624479f
-	};
+	  0.95978223f,  -1.91956449f,   0.95978222f,   1.94263823f,  -0.94359728f,
+      1.00000000f,  -1.99999997f,   1.00000001f,   1.97526963f,  -0.97624479f
+};
 
 float32_t Coeffs_gyro_lpf[NUM_STAGES_GYRO_LPF * 5] = {
-		  0.00000066f,   0.00000134f,   0.00000068f,   1.36626238f,  -0.46945250f,
-		  1.00000000f,   1.99963659f,   1.00011210f,   1.42376174f,  -0.53129463f,
-		  1.00000000f,   1.96916257f,   0.96963251f,   1.54381368f,  -0.66041376f,
-		  1.00000000f,   2.00036345f,   0.99988794f,   1.73495293f,  -0.86598925f
-	};
+	  0.00000066f,   0.00000134f,   0.00000068f,   1.36626238f,  -0.46945250f,
+	  1.00000000f,   1.99963659f,   1.00011210f,   1.42376174f,  -0.53129463f,
+	  1.00000000f,   1.96916257f,   0.96963251f,   1.54381368f,  -0.66041376f,
+	  1.00000000f,   2.00036345f,   0.99988794f,   1.73495293f,  -0.86598925f
+};
 float32_t Coeffs_accel_lpf[NUM_STAGES_GYRO_LPF * 5] = {
-	      0.00000000f,   0.00000001f,   0.00000000f,   1.65957621f,  -0.68950193f,
-	      1.00000000f,   1.99963659f,   1.00011210f,   1.69975023f,  -0.73040038f,
-	      1.00000000f,   1.96916257f,   0.96963251f,   1.77933911f,  -0.81142441f,
-	      1.00000000f,   2.00036345f,   0.99988794f,   1.89528976f,  -0.92946590f
-	};
+      0.00000000f,   0.00000001f,   0.00000000f,   1.65957621f,  -0.68950193f,
+      1.00000000f,   1.99963659f,   1.00011210f,   1.69975023f,  -0.73040038f,
+      1.00000000f,   1.96916257f,   0.96963251f,   1.77933911f,  -0.81142441f,
+      1.00000000f,   2.00036345f,   0.99988794f,   1.89528976f,  -0.92946590f
+};
 float32_t Coeffs_notch_x[NUM_STAGES_GYRO_NOTCH * 5] = {
-	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f
-	};
+      1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+      1.0f, 0.0f, 0.0f, 0.0f, 0.0f
+};
 float32_t Coeffs_notch_y[NUM_STAGES_GYRO_NOTCH * 5] = {
-	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f
-	};
+      1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+      1.0f, 0.0f, 0.0f, 0.0f, 0.0f
+};
 float32_t Coeffs_notch_z[NUM_STAGES_GYRO_NOTCH * 5] = {
-	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-	      1.0f, 0.0f, 0.0f, 0.0f, 0.0f
-	};
+      1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+      1.0f, 0.0f, 0.0f, 0.0f, 0.0f
+};
