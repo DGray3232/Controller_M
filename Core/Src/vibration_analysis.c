@@ -3,23 +3,30 @@
 #include "main.h"
 #include "arm_math.h"
 #include <math.h>
+#include <string.h>
 
 /**
  * @brief Рассчитывает частоту вибрации в герцах
- * @param *input_buffer указатель на входной буфер данных
+ * @param *input_buffer указатель на входной буфер данных (не изменяется)
  * @param fft_len Длина FFT (должна быть степенью 2)
  * @param f_sample Частота дискретизации, Гц
  * @param fft_output_buffer буфер для выходных данных FFT
  * @param fft_magnitude_buffer буфер для амплитуд
+ * @note Функция копирует данные во временный буфер перед оконным умножением,
+ *       чтобы не портить оригинальный кольцевой буфер данных.
  */
 float calculate_vibration_frequency(float *input_buffer, int fft_len, int f_sample, float *fft_output_buffer, float *fft_magnitude_buffer) {
-    // Применение оконной функции Ханна к буферу
+    // Копируем входные данные во временный буфер, чтобы не портить оригинал
+    float temp_buffer[fft_len];
+    memcpy(temp_buffer, input_buffer, fft_len * sizeof(float));
+
+    // Применение оконной функции Ханна к временному буферу
     for (int i = 0; i < fft_len; i++) {
         float hann = 0.5f * (1 - arm_cos_f32(2 * PI * i / (fft_len - 1)));
-        input_buffer[i] = input_buffer[i] * hann;
+        temp_buffer[i] = temp_buffer[i] * hann;
     }
     // Выполнение FFT
-    arm_rfft_fast_f32(&fft_params, input_buffer, fft_output_buffer, 0);
+    arm_rfft_fast_f32(&fft_params, temp_buffer, fft_output_buffer, 0);
     // Вычисление амплитуд (только первая половина)
     arm_cmplx_mag_f32(fft_output_buffer, fft_magnitude_buffer, fft_len / 2);
     // Поиск максимального значения (пропускаем DC компоненту i=0)

@@ -137,9 +137,8 @@ void update_coeff() {
     	     memset(filterState_Az_notch, 0, sizeof(filterState_Az_notch));
     	     arm_biquad_cascade_df2T_init_f32(&imu_Gz_notch, NUM_STAGES_GYRO_NOTCH, Coeffs_notch_z, filterState_Gz_notch);
     	     arm_biquad_cascade_df2T_init_f32(&imu_Az_notch, NUM_STAGES_ACCEL_NOTCH, Coeffs_notch_z, filterState_Az_notch);
-    	 }
-    	count_calculate_frequency = 0;
-    	count_calculate_frequency_flag = 0;
+	}
+	count_calculate_frequency_flag = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -610,7 +609,8 @@ void run_control_loop(){
 	data_ready_accel = 0;
 
 	count_calculate_frequency++;
-	if (count_calculate_frequency == 1000) {
+	if (count_calculate_frequency >= FFT_LEN) {
+		count_calculate_frequency = 0;
 		count_calculate_frequency_flag = 1;
 	}
     // Определяем режим полета по кнопке
@@ -1035,7 +1035,7 @@ int main(void)
 	*/
 	////////////////////////////////////////////////////////////////////////////////////////
 	if (count_calculate_frequency_flag == 1) {
-		update_coeff();//Обновление коэффициентов для режекторного фильтра 1 раз в секунду
+		update_coeff();//Обновление коэффициентов режекторного фильтра каждые FFT_LEN сэмплов (~512 мс)
 	}
 	///////////////для кастомного протокола remote_control/////////////////////////////////
 	/*
@@ -1262,16 +1262,21 @@ void SystemClock_Config(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
    if (htim == &htim11) {
-       // 1. Проверяем состояние HAL
+       // 1. Если данные с обоих датчиков IMU готовы — запускаем цикл управления
+       //    run_control_loop() сама сбросит data_ready_gyro и data_ready_accel в 0
+       if (data_ready_gyro && data_ready_accel) {
+           run_control_loop();
+       }
+
+       // 2. Проверяем состояние I2C шины
        if (HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
            // Сбрасываем счетчик таймаута, так как шина жива
            i2c_timeout_counter = 0;
-           // Пытаемся запустить чтение
-           if (I2C_Start_Read_gyro() != HAL_OK) {
-           }
+           // Пытаемся запустить чтение гироскопа
+           I2C_Start_Read_gyro();
        }
        else {
-           // 2. Шина ЗАНЯТА (BUSY)
+           // Шина ЗАНЯТА (BUSY)
            i2c_timeout_counter++;
            // Если шина занята более 5 циклов (5 мс) - это зависание.
            // При 400кГц транзакция длится < 1мс.
@@ -1283,7 +1288,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
        }
    }
 }
-// Колбэк завершения приема DMA
+// Колбэк завершения приема DMA — только парсинг данных и флаги
+// Вызов run_control_loop() перенесён в HAL_TIM_PeriodElapsedCallback (TIM11)
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
    if (hi2c->Instance == hi2c1.Instance) {
        if (current_device == 0) {
@@ -1291,16 +1297,14 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
            BMX055_Process_Gyro_Raw(&BMX055, dma_gyro_buffer);
            data_ready_gyro = 1;
            // 2. Запускаем акселерометр
-           if (I2C_Start_Read_accel() != HAL_OK) {
-               // Если запуск не удался, цепочка разорвана.
-           }
+           I2C_Start_Read_accel();
        }
        else if (current_device == 1) {
-           // 3. Данные акселерометра получены
+           // 3. Данные акселерометра получены — только парсинг
            BMX055_Process_Accel_Raw(&BMX055, dma_accel_buffer);
            data_ready_accel = 1;
-           // 4. Запускаем расчеты
-           run_control_loop();
+           // run_control_loop() больше НЕ вызывается здесь!
+           // Он выполняется в контексте TIM11, при наличии обоих флагов.
        }
    }
 }
