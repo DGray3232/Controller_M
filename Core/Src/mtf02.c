@@ -2,9 +2,6 @@
 #include "mtf02.h"
 #include <math.h>
 
-#define DEG_TO_RAD  0.017453292519943295769236907684886
-#define RAD_TO_DEG (180.0f / M_PI)
-
 /*
 Users can use microlink_decode as their serial port data processing function
 The minimum effective distance value is 10 (mm), and 0 indicates that the distance value is not available

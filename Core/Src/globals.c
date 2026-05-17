@@ -156,8 +156,6 @@ float error_roll_angle = 0;
 
 float error_pitch_mtf = 0;
 float error_roll_mtf = 0;
-float error_pitch_mtf_D = 0;
-float error_roll_mtf_D = 0;
 
 int forse_pitch_rate = 0;
 int forse_roll_rate = 0;

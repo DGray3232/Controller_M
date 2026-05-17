@@ -12,18 +12,11 @@ typedef struct {
 } MedianFilter;
 
 typedef struct {
-    float buffer[5];  // Буфер на 5 отсчетов
-    uint8_t idx;      // Текущий индекс для циклической записи
-} MovingAverageFilter;
-
-typedef struct {
     float lpf_output;
     float alf_lpf;
 } Filter_lpf;
 
 float median_filter(float new_sample, MedianFilter* filter);
-
-float moving_average_filter(float new_sample, MovingAverageFilter* filter);
 
 void low_pass_filter_init(Filter_lpf* fil, float alpha);
 

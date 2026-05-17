@@ -111,7 +111,7 @@ uint8_t BMX055_BMA_Init(I2C_HandleTypeDef *I2Cx)
         Data = 0x03; // 2G=0x03 2.0/2048.0, 4G=0x05 4.0/2048.0, 8G=0x08 8.0/2048.0, 16G=0x0C 16.0/2048.0
         HAL_I2C_Mem_Write(I2Cx, BMA_ADDRES, REG_BMA_RANGE, 1, &Data, 1, i2c_timeout_bmx); // Устанавливаем диапазон измерений акселерометра (указывая предел измеряемого углового ускорения)
         HAL_Delay(50);
-        Data = 0x0F; // 16Hz=0x09, 8Hz=0x08, 31Hz=0x0A, 63Hz=0x0B, 125Hz=0x0C, 250Hz=0x0D, 500Hz=0x0E, 1000Hz=0x0F
+        Data = 0x0D; // 16Hz=0x09, 31Hz=0x0A, 63Hz=0x0B, 125Hz=0x0C, 250Hz=0x0D, 500Hz=0x0E, 1000Hz=0x0F
         HAL_I2C_Mem_Write(I2Cx, BMA_ADDRES, REG_BMA_BW, 1, &Data, 1, i2c_timeout_bmx); // Устанавливаем пропускную способность акселерометра (указывая частоту обновления фильтрованных данных)
         HAL_Delay(50);
         Data = 0x00;                                                                            

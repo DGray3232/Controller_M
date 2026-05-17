@@ -42,13 +42,11 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-void normalizeQuaternion(float q[4]);
 int constrain(int value, int min_val, int max_val);
 void micolink_decode(uint8_t data, uint32_t* distance, uint8_t* distance_strength,
                      uint8_t* distance_precision, uint8_t* distance_status,
                      int16_t* flow_velocity_x, int16_t* flow_velocity_y,
                      uint8_t* flow_quality, uint8_t* flow_status);
-void uart6_transmit_dma_with_rx_pause(uint8_t* data, uint16_t size);
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -254,15 +252,6 @@ int32_t trim_percent(int32_t base_value, int8_t percent)
 
 
 ///////////////////////////////////////////////////////////////////////////////////// фильтр махони ///////////////////////////////////////////////////////
-static float invSqrt(float x) {
-    float halfx = 0.5f * x;
-    float y = x;
-    long i = *(long*)&y;
-    i = 0x5F3759DF - (i >> 1);
-    y = *(float*)&i;
-    y = y * (1.5f - (halfx * y * y));
-    return y;
-}
 void get_angle_mahony(void){
 
 	  float filterAx = filtered_Ax*9.81;
@@ -303,20 +292,6 @@ void get_angle_mahony(void){
 	  pitch *= RAD_TO_DEG;
 	  roll *= RAD_TO_DEG;
 	  yaw   *= RAD_TO_DEG;
-}
-// Функция для нормализации кватерниона
-void normalizeQuaternion(float q[4]) {
-    // Вычисление нормы (длины) кватерниона
-    float norm = invSqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-
-    // Проверка на ноль перед делением
-    if (norm != 0.0f) {
-        // Деление компонентов кватерниона на его норму
-        q[0] /= norm;
-        q[1] /= norm;
-        q[2] /= norm;
-        q[3] /= norm;
-    }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////// фильтрованные данные///////////////////////////////////////////////////////////////

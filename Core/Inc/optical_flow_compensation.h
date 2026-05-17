@@ -35,24 +35,6 @@ void compensate_rotation_for_optical_flow(OpticalFlowResults_t* results,
                                          Filter_lpf* lpf_x, Filter_lpf* lpf_y,
                                          int16_t flow_velocity_x, int16_t flow_velocity_y);
 
-// Функция для обработки оптического потока (вызывается когда есть новые данные)
-/*
-void process_optical_flow_data(OpticalFlowResults_t* results,
-                              GyroIntegration_t* gyro_int,
-                              Filter_lpf* lpf_x, Filter_lpf* lpf_y,
-                              uint32_t distance,
-                              int16_t flow_velocity_x, int16_t flow_velocity_y);
-void process_optical_flow_data_v2(OpticalFlowResults_t* results,
-                              GyroIntegration_t* gyro_int,
-							  MedianFilter* mf_x, MedianFilter* mf_y,MovingAverageFilter* maf_x, MovingAverageFilter* maf_y,
-                              uint32_t distance,
-                              int16_t flow_velocity_x, int16_t flow_velocity_y);
-*/
-// Функция для обработки оптического потока v2 (вызывается когда есть новые данные)
-void compensate_rotation_for_optical_flow_v2(OpticalFlowResults_t* results,
-										  MedianFilter* mf_x, MedianFilter* mf_y,MovingAverageFilter* maf_x, MovingAverageFilter* maf_y,
-                                          int16_t flow_velocity_x, int16_t flow_velocity_y);
-
 // Вспомогательные функции
 void gyro_integration_reset(GyroIntegration_t* gyro_int);
 void optical_flow_results_init(OpticalFlowResults_t* results);
