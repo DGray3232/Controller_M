@@ -202,7 +202,7 @@ uint8_t BMX055_BMG_Init(I2C_HandleTypeDef *I2Cx)
         Data = 0x00; // 125DPS=0x04 124.87/32768.0, 250DPS=0x03 249.75/32768.0, 500DPS=0x02 499.5 /32768.0, 1000DPS=0x01 999.0 /32768.0, 2000DPS=0x00 1998.0/32768.0
         HAL_I2C_Mem_Write(I2Cx, BMG_ADDRES, REG_BMG_RANGE, 1, &Data, 1, i2c_timeout_bmx); // Устанавливаем диапазон измерений гироскопа (указывая предел измеряемой угловой скорости)
         HAL_Delay(50);
-        Data = 0x00; // 23Hz=0x04, 12Hz=0x05, 32Hz=0x07, 47Hz=0x03, 64Hz=0x06, 116Hz=0x02, 230Hz=0x01, 523Hz=0x00
+        Data = 0x01; // 23Hz=0x04, 12Hz=0x05, 32Hz=0x07, 47Hz=0x03, 64Hz=0x06, 116Hz=0x02, 230Hz=0x01, 523Hz=0x00
         HAL_I2C_Mem_Write(I2Cx, BMG_ADDRES, REG_BMG_BW, 1, &Data, 1, i2c_timeout_bmx); // Устанавливаем пропускную способность гироскопа (указывая частоту обновления фильтрованных данных)
         HAL_Delay(50);
         Data = 0x00;                                                                            

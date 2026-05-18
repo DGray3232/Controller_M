@@ -19,24 +19,26 @@ void gyro_integration_update(GyroIntegration_t* gyro_int, float filtered_Gx, flo
     if (gyro_int == NULL){
     	return;
     }
-    // Получаем текущее время в микросекундах.
-    // HAL_GetTick() возвращает миллисекунды, поэтому * 1000.
-    uint32_t current_time = HAL_GetTick() * 1000; // микросекунды
+    // Текущее время в миллисекундах (сырой HAL_GetTick без умножения)
+    uint32_t current_time = HAL_GetTick();
     // Инициализация при первом запуске
     if (gyro_int->last_update == 0) {
         gyro_int->last_update = current_time;
         return;
     }
-    // Вычисляем дельту времени (dt) в секундах с прошлого вызова
-    float dt = (current_time - gyro_int->last_update) / 1000000.0f;
-    if (dt > 0) {
+    // Дельта времени в миллисекундах (без переполнения — unsigned wraparound корректен)
+    uint32_t dt_ms = current_time - gyro_int->last_update;
+    if (dt_ms > 0) {
+        // Переводим в секунды для интеграции угловой скорости
+        float dt = dt_ms / 1000.0f;
         // Накопление: Угловая Скорость (град/с) × Время (с) = Накопленный Угол (в градусах)
         // используем -Gx и Gy, чтобы соответствовать осям дрона и
         // направлению, которое сенсор оптического потока считает "положительным".
         gyro_int->acc_x += (-filtered_Gx) * dt;
         gyro_int->acc_y += filtered_Gy * dt;
-        // Также накапливаем общее время, в течение которого шло накопление
-        gyro_int->time_us += (current_time - gyro_int->last_update);
+        // Также накапливаем общее время в микросекундах.
+        // Интегратор сбрасывается каждые 20 мс, так что переполнения не будет.
+        gyro_int->time_us += dt_ms * 1000;
         gyro_int->update_count++;
     }
     // Обновляем время последнего вызова

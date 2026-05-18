@@ -41,9 +41,9 @@
 #define MAX_P                 150
 
 /* --- Триммирование (процентов) --- */
-#define TRIM_PERCENT_FRONT_LEFT   0
-#define TRIM_PERCENT_FRONT_RIGHT  0
-#define TRIM_PERCENT_REAR_LEFT    5
+#define TRIM_PERCENT_FRONT_LEFT   1
+#define TRIM_PERCENT_FRONT_RIGHT  1
+#define TRIM_PERCENT_REAR_LEFT    2
 #define TRIM_PERCENT_REAR_RIGHT   1
 
 /* --- Режимы полета --- */
@@ -66,12 +66,12 @@
 #define INTEGRAL_LIMIT_DoM        5.0
 #define SCALE_FACTOR_DoM          1.0
 
-#define PITCH_PID_KP_RATE_DoM     11.5
+#define PITCH_PID_KP_RATE_DoM     12.0
 #define PITCH_PID_KI_RATE_DoM     0.1
-#define PITCH_PID_KD_RATE_DoM     0.1
-#define ROLL_PID_KP_RATE_DoM      11.5
+#define PITCH_PID_KD_RATE_DoM     0.12
+#define ROLL_PID_KP_RATE_DoM      12.0
 #define ROLL_PID_KI_RATE_DoM      0.1
-#define ROLL_PID_KD_RATE_DoM      0.1
+#define ROLL_PID_KD_RATE_DoM      0.12
 #define YAW_PID_KP_RATE_DoM       21.5
 #define YAW_PID_KI_RATE_DoM       0.1
 #define YAW_PID_KD_RATE_DoM       0.1

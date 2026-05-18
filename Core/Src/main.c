@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "remote_control_mavlink.h"
+#include "blackbox.h"
 #include "config_param.h"
 #include "globals.h"
 #include "arm_math.h"
@@ -506,7 +507,7 @@ void InitBMX055() {
     }
 */
 
-    //setFastOffset_BMA(&hi2c1);
+    setFastOffset_BMA(&hi2c1);
     setFastOffset_BMG(&hi2c1);
     //setFastOffset_BMM(&hi2c1, 1);
     HAL_Delay(1000);
@@ -550,7 +551,7 @@ void run_control_loop(){
 	actual_velocity_yaw_D = filtered_Gz_D;
     // MTF имеет высший приоритет при выполнении условий
 	if (distance > 100) {
-	    active_mode = FLIGHT_MODE_MTF;
+	    //active_mode = FLIGHT_MODE_MTF;
 	}
 	// Вычисляем target_velocity на основе активного режима
     switch(active_mode) {
@@ -769,6 +770,7 @@ void run_control_loop(){
 	      freq = (float)HAL_RCC_GetHCLKFreq() / (float)dt_cycles;
 	  }
 */
+	Blackbox_Write();
 }
 
 /* USER CODE END 0 */
@@ -863,7 +865,23 @@ int main(void)
 
   PID_Init(&altitude_pid, ALTITUDE_PID_KP, ALTITUDE_PID_KI, ALTITUDE_PID_KD,ALTITUDE_ALPHA, ALTITUDE_ALPHA_DERIVATIVE, ALTITUDE_INTEGRAL_LIMIT, ALTITUDE_SCALE_FACTOR);
   
-  bias();
+    // === Термопрогрев перед калибровкой bias ===
+    // Читаем акселерометр, чтобы получить начальную температуру
+    BMX055_Read_Accel(&hi2c1, &BMX055);
+    float temp_start = BMX055.Temperature;
+    HAL_Delay(3000);  // минимум 3 секунды прогрева
+    float temp_now;
+    int warmup_attempts = 0;
+    do {
+        BMX055_Read_Accel(&hi2c1, &BMX055);
+        temp_now = BMX055.Temperature;
+        if (fabsf(temp_now - temp_start) < 1.0f) break;  // стабилизация в пределах 1°C
+        temp_start = temp_now;
+        HAL_Delay(1000);
+        warmup_attempts++;
+    } while (warmup_attempts < 10);  // максимум 10 доп. секунд
+
+    bias();
 
   HAL_I2C_DeInit(&hi2c1);
   MX_I2C1_Init();
@@ -875,6 +893,8 @@ int main(void)
 
   HAL_TIM_Base_Start_IT(&htim11);
 
+  Blackbox_Init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -885,6 +905,14 @@ int main(void)
 	MAV_Check_Connection(&huart1);
 	if (count_calculate_frequency_flag == 1) {
 		update_coeff();//Обновление коэффициентов режекторного фильтра каждые FFT_LEN сэмплов (~512 мс)
+	}
+
+	// Blackbox: по 'd' через USART2 — выгрузка лога в CSV
+	uint8_t cmd;
+	if (HAL_UART_Receive(&huart2, &cmd, 1, 1) == HAL_OK) {
+	    if (cmd == 'd' || cmd == 'D') {
+	        Blackbox_Dump();
+	    }
 	}
 
     /* USER CODE END WHILE */
