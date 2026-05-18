@@ -28,22 +28,7 @@
     return temp[2];
 }
 
- float moving_average_filter(float new_sample, MovingAverageFilter* filter) {
-     // Добавляем новое значение в буфер
-     filter->buffer[filter->idx++] = new_sample;
-     if (filter->idx >= 5) {
-         filter->idx = 0;
-     }
-     // Суммируем все значения в буфере
-     float sum = 0;
-     for (int i = 0; i < 5; i++) {
-         sum += filter->buffer[i];
-     }
-     // Возвращаем среднее значение
-     return sum / 5;
- }
-
- void low_pass_filter_init(Filter_lpf* fil, float alpha) {
+void low_pass_filter_init(Filter_lpf* fil, float alpha) {
      fil->lpf_output = 0.0; // �?нициализация предыдущего значения
      fil->alf_lpf = alpha;
  }

@@ -1,8 +1,8 @@
 #include "optical_flow_compensation.h"
 #include "math.h"
+#include "config_param.h"
 
 // Константы
-#define DEG_TO_RAD  0.017453292519943295769236907684886f
 #define OPTICAL_FLOW_UPDATE_RATE_HZ 50     // 50 Гц - частота обновления оптического потока
 #define OPTICAL_FLOW_UPDATE_PERIOD_MS (1000 / OPTICAL_FLOW_UPDATE_RATE_HZ) // 20 мс
 
