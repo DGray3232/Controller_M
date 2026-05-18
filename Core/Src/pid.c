@@ -81,6 +81,16 @@ float PID_Compute(PID_Controller *pid, float error, float dt) {
 
 
 /**
+ * @brief  Сбрасывает накопленные состояния PID-регулятора (для altitude_pid)
+ */
+void PID_Reset(PID_Controller *pid) {
+    pid->integral = 0.0;
+    pid->error_previous = 0.0;
+    pid->previous_output = 0.0;
+    pid->previous_derivative = 0.0;
+}
+
+/**
  * @brief  Сбрасывает накопленные состояния PID-2-регулятора
  */
 void PID_2_Reset(PID_2_Controller *pid) {
@@ -108,8 +118,8 @@ void PID_DoM_Init(PID_DoM_Controller *pid, float Kp, float Ki, float Kd, float a
 }
 
 /**
-  * @brief  Сброс состояния регулятора
-  */
+ * @brief  Сброс состояния регулятора
+ */
 void PID_DoM_Reset(PID_DoM_Controller *pid) {
     pid->integral = 0.0f;
     pid->previous_measurement = 0.0f;
@@ -118,10 +128,10 @@ void PID_DoM_Reset(PID_DoM_Controller *pid) {
 }
 
 /**
-  * @brief  Вычисляет управляющий сигнал (Derivative on Measurement)
-  * @param  error ошибка
-  * @param  measurement Текущее значение с датчика
-  */
+ * @brief  Вычисляет управляющий сигнал (Derivative on Measurement)
+ * @param  error ошибка
+ * @param  measurement Текущее значение с датчика
+ */
 float PID_DoM_Compute(PID_DoM_Controller *pid, float error, float measurement, float dt) {
     //float dt = CONTROL_LOOP_DT;
     // 1. Обработка входных данных

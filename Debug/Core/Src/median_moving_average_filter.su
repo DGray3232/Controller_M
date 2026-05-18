@@ -1,4 +1,0 @@
-../Core/Src/median_moving_average_filter.c:7:8:median_filter	48	static
-../Core/Src/median_moving_average_filter.c:31:8:moving_average_filter	24	static
-../Core/Src/median_moving_average_filter.c:46:7:low_pass_filter_init	16	static
-../Core/Src/median_moving_average_filter.c:50:8:low_pass_filter	16	static

@@ -1,8 +1,0 @@
-../Core/Src/AHRSAlgorithms.c:69:14:invSqrt	32	static
-../Core/Src/AHRSAlgorithms.c:82:6:MadgwickQuaternionUpdate	208	static
-../Core/Src/AHRSAlgorithms.c:179:6:MadgwickQuaternionUpdate_not_mag	152	static
-../Core/Src/AHRSAlgorithms.c:243:6:MahonyQuaternionUpdate	176	static
-../Core/Src/AHRSAlgorithms.c:335:6:MahonyQuaternionUpdate_not_mag	96	static
-../Core/Src/AHRSAlgorithms.c:402:6:MahonyAHRSupdateIMU	80	static
-../Core/Src/AHRSAlgorithms.c:468:6:MahonyQuaternionUpdate_mag	120	static
-../Core/Src/AHRSAlgorithms.c:579:15:getQ	4	static

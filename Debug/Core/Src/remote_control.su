@@ -1,3 +1,0 @@
-../Core/Src/remote_control.c:7:7:expo_curve	16	static
-../Core/Src/remote_control.c:31:6:receive_and_parse_data	24	static
-../Core/Src/remote_control.c:73:6:check_connection_loss	8	static
