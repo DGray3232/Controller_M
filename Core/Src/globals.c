@@ -2,6 +2,8 @@
 #include "globals.h"
 
 GyroIntegration_t gyro_integration = {0};
+float target_angle_pitch_mtf = 0.0f;
+float target_angle_roll_mtf = 0.0f;
 OpticalFlowResults_t optical_flow_results = {0};
 
 BMX055_t BMX055;

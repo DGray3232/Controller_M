@@ -467,7 +467,7 @@ void bias() {
         // Проверка: дрон должен стоять достаточно ровно (X и Y ~ 0)
         // Если offset_Ax или offset_Ay > 0.1g — значит дрон наклонён,
         // и калибровка акселерометра будет неверной.
-        if (fabsf(offset_Ax) > 0.1f || fabsf(offset_Ay) > 0.1f) {
+        if (fabsf(offset_Ax) > 0.25f || fabsf(offset_Ay) > 0.25f) {
             offset_Ax = 0.0f;
             offset_Ay = 0.0f;
             offset_Az = 0.0f;
@@ -507,8 +507,8 @@ void InitBMX055() {
     }
 */
 
-    setFastOffset_BMA(&hi2c1);
-    setFastOffset_BMG(&hi2c1);
+    //setFastOffset_BMA(&hi2c1);
+    //setFastOffset_BMG(&hi2c1);
     //setFastOffset_BMM(&hi2c1, 1);
     HAL_Delay(1000);
     HAL_GPIO_WritePin(GPIOA, LD2_Pin, GPIO_PIN_SET);
@@ -551,7 +551,7 @@ void run_control_loop(){
 	actual_velocity_yaw_D = filtered_Gz_D;
     // MTF имеет высший приоритет при выполнении условий
 	if (distance > 100) {
-	    //active_mode = FLIGHT_MODE_MTF;
+	    active_mode = FLIGHT_MODE_MTF;
 	}
 	// Вычисляем target_velocity на основе активного режима
     switch(active_mode) {
@@ -560,8 +560,7 @@ void run_control_loop(){
 	        float target_speed_x = expo_curve(joystick_y, 0.01f) * 50.0f;
 	        float target_speed_y = expo_curve(joystick_x, 0.01f) * 50.0f;
 
-	        static float target_angle_pitch_mtf = 0.0f;
-	        static float target_angle_roll_mtf = 0.0f;
+	        // target_angle_pitch/roll_mtf объявлены в globals.c
 
 	        // Работает на частоте 50 Гц
 	        if (optical_flow_results.new_optical_data_available) {

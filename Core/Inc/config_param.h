@@ -25,7 +25,7 @@
 
 /* --- Параметры системы --- */
 #define CONTROL_LOOP_DT 0.001f // 1000 Гц
-#define BIAS_OFSET 1024
+#define BIAS_OFSET 2048
 #define MIKOLINL 27
 
 /* --- Multishot и моторы --- */
@@ -41,10 +41,10 @@
 #define MAX_P                 150
 
 /* --- Триммирование (процентов) --- */
-#define TRIM_PERCENT_FRONT_LEFT   1
-#define TRIM_PERCENT_FRONT_RIGHT  1
-#define TRIM_PERCENT_REAR_LEFT    2
-#define TRIM_PERCENT_REAR_RIGHT   1
+#define TRIM_PERCENT_FRONT_LEFT   0
+#define TRIM_PERCENT_FRONT_RIGHT  -1
+#define TRIM_PERCENT_REAR_LEFT    5
+#define TRIM_PERCENT_REAR_RIGHT   0
 
 /* --- Режимы полета --- */
 #define FLIGHT_MODE_ANGLE 0
@@ -52,40 +52,40 @@
 #define FLIGHT_MODE_MTF   2
 
 /* --- PID регуляторы (DoM) --- */
-#define PITCH_PID_KP_DoM          0.8
-#define PITCH_PID_KI_DoM          0.01
-#define PITCH_PID_KD_DoM          0.05
-#define ROLL_PID_KP_DoM           0.8
-#define ROLL_PID_KI_DoM           0.01
-#define ROLL_PID_KD_DoM           0.05
-#define YAW_PID_KP_DoM            3.0
+#define PITCH_PID_KP_DoM          1.2  
+#define PITCH_PID_KI_DoM          0.02
+#define PITCH_PID_KD_DoM          0.05 
+#define ROLL_PID_KP_DoM           0.72  
+#define ROLL_PID_KI_DoM           0.02
+#define ROLL_PID_KD_DoM           0.05 
+#define YAW_PID_KP_DoM            5.0  
 #define YAW_PID_KI_DoM            0.1
-#define YAW_PID_KD_DoM            0.05
+#define YAW_PID_KD_DoM            0.05 
 #define ALPHA_DoM                 0.1
 #define ALPHA_DERIVATIVE_DoM      0.1
 #define INTEGRAL_LIMIT_DoM        5.0
 #define SCALE_FACTOR_DoM          1.0
 
-#define PITCH_PID_KP_RATE_DoM     12.0
+#define PITCH_PID_KP_RATE_DoM     13.0
 #define PITCH_PID_KI_RATE_DoM     0.1
-#define PITCH_PID_KD_RATE_DoM     0.12
-#define ROLL_PID_KP_RATE_DoM      12.0
+#define PITCH_PID_KD_RATE_DoM     0.15
+#define ROLL_PID_KP_RATE_DoM      13.0
 #define ROLL_PID_KI_RATE_DoM      0.1
-#define ROLL_PID_KD_RATE_DoM      0.12
+#define ROLL_PID_KD_RATE_DoM      0.15
 #define YAW_PID_KP_RATE_DoM       21.5
-#define YAW_PID_KI_RATE_DoM       0.1
+#define YAW_PID_KI_RATE_DoM       0.2
 #define YAW_PID_KD_RATE_DoM       0.1
 #define ALPHA_RATE_DoM            1.0
 #define ALPHA_DERIVATIVE_RATE_DoM 0.1
 #define INTEGRAL_LIMIT_RATE_DoM   5.0
 #define SCALE_FACTOR_RATE_DoM     1.0
 
-#define PITCH_PID_KP_MTF_DoM      0.4
+#define PITCH_PID_KP_MTF_DoM      0.36
 #define PITCH_PID_KI_MTF_DoM      0.1 
-#define PITCH_PID_KD_MTF_DoM      0.02
-#define ROLL_PID_KP_MTF_DoM       1.0
+#define PITCH_PID_KD_MTF_DoM      0.018
+#define ROLL_PID_KP_MTF_DoM       0.9
 #define ROLL_PID_KI_MTF_DoM       0.1 
-#define ROLL_PID_KD_MTF_DoM       0.5 
+#define ROLL_PID_KD_MTF_DoM       0.45 
 #define ALPHA_MTF_DoM             1.0
 #define ALPHA_DERIVATIVE_MTF_DoM  0.1
 #define INTEGRAL_LIMIT_MTF_DoM    5.0

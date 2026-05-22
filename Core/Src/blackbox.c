@@ -99,6 +99,16 @@ void Blackbox_Write(void) {
     s->flight_mode = active_mode;
     s->armed = (m1_pulse[0] > MIN_PULSE_WIDTH) ? 1 : 0;
 
+    // --- MTF / Optical Flow данные ---
+    s->mtf_flow[0] = flow_velocity_x;
+    s->mtf_flow[1] = flow_velocity_y;
+    s->mtf_speed[0] = (int16_t)(optical_flow_results.speed_cm_s_x * 10.0f);
+    s->mtf_speed[1] = (int16_t)(optical_flow_results.speed_cm_s_y * 10.0f);
+    s->mtf_target_angle[0] = (int16_t)(target_angle_pitch_mtf * 10.0f);
+    s->mtf_target_angle[1] = (int16_t)(target_angle_roll_mtf * 10.0f);
+    s->mtf_flow_quality = flow_quality;
+    s->mtf_distance_strength = distance_strength;
+
     // Продвигаем указатель
     write_idx = (write_idx + 1) % BLACKBOX_BUFFER_SIZE;
     if (sample_count < BLACKBOX_BUFFER_SIZE) {
@@ -123,16 +133,19 @@ void Blackbox_Dump(void) {
         start = write_idx;  // самая старая запись
     }
 
-    char header[] = "t_ms,gx,gy,gz,ax,ay,az,pitch,roll,dist,erP,erR,erY,pidP,pidR,pidY,m1,m2,m3,m4,thr,altCorr,mode,arm\r\n";
+    char header[] = "t_ms,gx,gy,gz,ax,ay,az,pitch,roll,dist,erP,erR,erY,pidP,pidR,pidY,m1,m2,m3,m4,thr,altCorr,mode,arm,"
+                    "fvx,fvy,spdX,spdY,tgP,tgR,fQ,dStr\r\n";
     HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
 
-    char line[128];
+    char line[192];
     for (uint16_t i = 0; i < total; i++) {
         uint16_t idx = (start + i) % BLACKBOX_BUFFER_SIZE;
         BlackboxSample_t *s = &buffer[idx];
 
         int len = snprintf(line, sizeof(line),
-            "%u,%d,%d,%d,%d,%d,%d,%d,%d,%u,%d,%d,%d,%d,%d,%d,%u,%u,%u,%u,%u,%d,%u,%u\r\n",
+            "%u,%d,%d,%d,%d,%d,%d,%d,%d,%u,%d,%d,%d,%d,%d,%d,"
+            "%u,%u,%u,%u,%u,%d,%u,%u,"
+            "%d,%d,%d,%d,%d,%d,%u,%u\r\n",
             s->timestamp,
             s->gyro[0], s->gyro[1], s->gyro[2],
             s->accel[0], s->accel[1], s->accel[2],
@@ -144,7 +157,13 @@ void Blackbox_Dump(void) {
             s->throttle,
             s->altitude_correction,
             (unsigned int)s->flight_mode,
-            (unsigned int)s->armed);
+            (unsigned int)s->armed,
+            // MTF данные
+            s->mtf_flow[0], s->mtf_flow[1],
+            s->mtf_speed[0], s->mtf_speed[1],
+            s->mtf_target_angle[0], s->mtf_target_angle[1],
+            (unsigned int)s->mtf_flow_quality,
+            (unsigned int)s->mtf_distance_strength);
 
         if (len > 0) {
             HAL_UART_Transmit(&huart2, (uint8_t*)line, len, HAL_MAX_DELAY);

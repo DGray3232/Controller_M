@@ -26,7 +26,13 @@ typedef struct __attribute__((packed)) {
     int16_t  altitude_correction;   // [мкс добавки к газу]
     uint8_t  flight_mode;           // FLIGHT_MODE_ACRO/ANGLE/MTF
     uint8_t  armed;                 // 1 = моторы крутятся
-} BlackboxSample_t;                  // 46 байт на запись
+    // --- MTF / Optical Flow данные ---
+    int16_t  mtf_flow[2];           // flow_velocity_x,y (сырой, пиксели/с)
+    int16_t  mtf_speed[2];          // speed_cm_s_x,y после компенсации [см/с * 10]
+    int16_t  mtf_target_angle[2];   // target_angle_pitch/roll_mtf [град * 10]
+    uint8_t  mtf_flow_quality;      // flow_quality (0-255)
+    uint8_t  mtf_distance_strength; // distance_strength (0-255)
+} BlackboxSample_t;                  // 60 байт на запись → 60 КБ на буфер
 
 // Инициализация blackbox
 void Blackbox_Init(void);

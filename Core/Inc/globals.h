@@ -48,6 +48,9 @@ extern PID_DoM_Controller roll_pid_angle_DoM;
 extern PID_DoM_Controller pitch_pid_mtf_DoM;
 extern PID_DoM_Controller roll_pid_mtf_DoM;
 
+extern float target_angle_pitch_mtf;
+extern float target_angle_roll_mtf;
+
 /* --- Фильтры (Медианные и LPF) --- */
 extern MedianFilter Gyro_x;
 extern MedianFilter Gyro_y;
