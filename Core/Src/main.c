@@ -506,7 +506,6 @@ void InitBMX055() {
         }
     }
 */
-
     //setFastOffset_BMA(&hi2c1);
     //setFastOffset_BMG(&hi2c1);
     //setFastOffset_BMM(&hi2c1, 1);
@@ -562,8 +561,27 @@ void run_control_loop(){
 
 	        // target_angle_pitch/roll_mtf объявлены в globals.c
 
+	        // ----- Позиционный I-term (возврат в точку старта) -----
+	        static float pos_int_x = 0.0f, pos_int_y = 0.0f;
+	        const float KI_POS = 0.01f;   // см/с поправки на 1 см отклонения
+	        const float POS_INT_LIMIT = 200.0f;  // макс 2 метра
+
 	        // Работает на частоте 50 Гц
 	        if (optical_flow_results.new_optical_data_available) {
+	            // Позиционный интегратор: накапливаем смещение ∫V·dt
+	            pos_int_x += optical_flow_results.speed_cm_s_x * 0.020f;
+	            pos_int_y += optical_flow_results.speed_cm_s_y * 0.020f;
+	            pos_int_x = constrain_float(pos_int_x, -POS_INT_LIMIT, POS_INT_LIMIT);
+	            pos_int_y = constrain_float(pos_int_y, -POS_INT_LIMIT, POS_INT_LIMIT);
+	            // Сброс при движении стика
+	            if (joystick_x != 0 || joystick_y != 0) {
+	                pos_int_x = 0.0f;
+	                pos_int_y = 0.0f;
+	            }
+	            // Коррекция target_speed для возврата в исходную точку
+	            target_speed_x -= pos_int_x * KI_POS;
+	            target_speed_y -= pos_int_y * KI_POS;
+
 	            error_pitch_mtf = target_speed_y - optical_flow_results.speed_cm_s_y;
 	            error_roll_mtf  = target_speed_x - optical_flow_results.speed_cm_s_x;
 
@@ -578,9 +596,11 @@ void run_control_loop(){
 			// ----- Удержание высоты по button_2 -----
 			// Детектируем фронт включения кнопки для захвата текущей высоты
 			if (button_2 == 1 && last_button_2_state == false) {
-    			// Компенсация наклона при захвате высоты
-                target_altitude_mm = (float)distance * cosf(pitch * DEG_TO_RAD) * cosf(roll  * DEG_TO_RAD);
-    			altitude_hold_active = true;
+   				// Компенсация наклона при захвате высоты
+                float raw = (float)distance * cosf(pitch * DEG_TO_RAD) * cosf(roll  * DEG_TO_RAD);
+                target_altitude_mm = raw;
+                smooth_altitude_mm = raw;  // синхронизация фильтра
+   				altitude_hold_active = true;
 			}
 			last_button_2_state = (button_2 == 1);
 			// Если кнопка отпущена, выключаем удержание и сбрасываем интегратор
@@ -591,7 +611,10 @@ void run_control_loop(){
 			}
 			// Вычисление коррекции тяги (работает с частотой получения distance ~50 Гц)
 			if (altitude_hold_active) {
-				float current_altitude_mm = (float)distance * cosf(pitch * DEG_TO_RAD) * cosf(roll  * DEG_TO_RAD);
+				// Сглаживание высоты (LPF 0.3)
+                float raw_altitude_mm = (float)distance * cosf(pitch * DEG_TO_RAD) * cosf(roll * DEG_TO_RAD);
+                smooth_altitude_mm = smooth_altitude_mm * 0.7f + raw_altitude_mm * 0.3f;
+                float current_altitude_mm = smooth_altitude_mm;
     			altitude_error_mm = target_altitude_mm - current_altitude_mm;
 				// Ограничиваем ошибку, чтобы избежать резких скачков
                 altitude_error_mm = constrain_float(altitude_error_mm, -500.0f, 500.0f);
@@ -699,6 +722,11 @@ void run_control_loop(){
 
 	if(button == 1 && potentiometer_value > 0){
 
+       // Перед вызовом PID — deadband не реагировать на малые отклонения
+       if (fabsf(error_pitch_rate) < 5.0f) error_pitch_rate = 0.0f; // 10.0f
+       if (fabsf(error_roll_rate)  < 5.0f) error_roll_rate  = 0.0f; // 10.0f
+       if (fabsf(error_yaw_rate)   < 2.0f)  error_yaw_rate   = 0.0f; // 5.0f
+
 	   forse_pitch_rate = PID_DoM_Compute(&pitch_pid_rate_DoM, error_pitch_rate, actual_velocity_pitch_D, 0.001f);
 	   forse_roll_rate = PID_DoM_Compute(&roll_pid_rate_DoM, error_roll_rate, actual_velocity_roll_D, 0.001f);
 	   forse_yaw_rate = PID_DoM_Compute(&yaw_pid_rate_DoM, error_yaw_rate, actual_velocity_yaw_D, 0.001f);
@@ -739,6 +767,8 @@ void run_control_loop(){
        filtered_power_4 = constrain_float(filtered_power_4, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 	   // Передаем на моторы уже отфильтрованные значения
 	   Motors_Set_Throttle((uint16_t)filtered_power_1,(uint16_t)filtered_power_2,(uint16_t)filtered_power_3,(uint16_t)filtered_power_4);
+
+       //Motors_Set_Throttle(MAX_PULSE_WIDTH, MAX_PULSE_WIDTH, MAX_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
 	  } else {
 
@@ -914,6 +944,9 @@ int main(void)
 	    }
 	}
 
+   snprintf(buf, sizeof(buf),"button_2 %d,button %d,potentiometer_value %d,joystick_x %d,joystick_y %d,right_left %d,pitch %f,roll %f,distance %lu\n",
+   button_2,button,potentiometer_value,joystick_x,joystick_y,right_left,pitch,roll,distance);
+   HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

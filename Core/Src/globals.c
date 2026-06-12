@@ -4,6 +4,7 @@
 GyroIntegration_t gyro_integration = {0};
 float target_angle_pitch_mtf = 0.0f;
 float target_angle_roll_mtf = 0.0f;
+float smooth_altitude_mm = 0.0f;
 OpticalFlowResults_t optical_flow_results = {0};
 
 BMX055_t BMX055;
@@ -318,3 +319,5 @@ float32_t Coeffs_notch_z[NUM_STAGES_GYRO_NOTCH * 5] = {
       1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
       1.0f, 0.0f, 0.0f, 0.0f, 0.0f
 };
+
+char buf[250];

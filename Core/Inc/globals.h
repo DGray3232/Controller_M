@@ -37,6 +37,7 @@ extern float throttle_altitude_correction;
 extern bool altitude_hold_active;
 extern bool last_button_2_state;
 extern float final_throttle;
+extern float smooth_altitude_mm;
 
 extern PID_DoM_Controller pitch_pid_rate_DoM;
 extern PID_DoM_Controller roll_pid_rate_DoM;
@@ -312,5 +313,7 @@ extern float32_t Coeffs_accel_lpf[NUM_STAGES_GYRO_LPF * 5];
 extern float32_t Coeffs_notch_x[NUM_STAGES_GYRO_NOTCH * 5];
 extern float32_t Coeffs_notch_y[NUM_STAGES_GYRO_NOTCH * 5];
 extern float32_t Coeffs_notch_z[NUM_STAGES_GYRO_NOTCH * 5];
+
+extern char buf[250];
 
 #endif /* GLOBALS_H */

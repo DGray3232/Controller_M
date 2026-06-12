@@ -3,6 +3,14 @@
 #include "usart.h"
 #include <string.h>
 #include <stdio.h>
+#include <math.h>   // для isfinite
+
+// Безопасный каст float → int16_t с защитой от NaN и переполнения
+static inline int16_t safe_int16(float val) {
+    if (!isfinite(val) || val > 32767.0f) return 32767;
+    if (val < -32768.0f) return -32768;
+    return (int16_t)val;
+}
 
 // Кольцевой буфер
 static BlackboxSample_t buffer[BLACKBOX_BUFFER_SIZE];
@@ -57,31 +65,31 @@ void Blackbox_Write(void) {
     s->timestamp = (uint16_t)(HAL_GetTick() - start_time_ms);
 
     // Гироскоп: град/с × 10
-    s->gyro[0] = (int16_t)(filtered_Gx * 10.0f);
-    s->gyro[1] = (int16_t)(filtered_Gy * 10.0f);
-    s->gyro[2] = (int16_t)(filtered_Gz * 10.0f);
+    s->gyro[0] = safe_int16(filtered_Gx * 10.0f);
+    s->gyro[1] = safe_int16(filtered_Gy * 10.0f);
+    s->gyro[2] = safe_int16(filtered_Gz * 10.0f);
 
     // Акселерометр: g × 1000
-    s->accel[0] = (int16_t)(filtered_Ax * 1000.0f);
-    s->accel[1] = (int16_t)(filtered_Ay * 1000.0f);
-    s->accel[2] = (int16_t)(filtered_Az * 1000.0f);
+    s->accel[0] = safe_int16(filtered_Ax * 1000.0f);
+    s->accel[1] = safe_int16(filtered_Ay * 1000.0f);
+    s->accel[2] = safe_int16(filtered_Az * 1000.0f);
 
     // Углы: град × 10
-    s->angles[0] = (int16_t)(pitch * 10.0f);
-    s->angles[1] = (int16_t)(roll * 10.0f);
+    s->angles[0] = safe_int16(pitch * 10.0f);
+    s->angles[1] = safe_int16(roll * 10.0f);
 
     // Дальномер
     s->distance = (uint16_t)distance;
 
     // Ошибки PID (rate)
-    s->errors[0] = (int16_t)error_pitch_rate;
-    s->errors[1] = (int16_t)error_roll_rate;
-    s->errors[2] = (int16_t)error_yaw_rate;
+    s->errors[0] = safe_int16(error_pitch_rate);
+    s->errors[1] = safe_int16(error_roll_rate);
+    s->errors[2] = safe_int16(error_yaw_rate);
 
     // Выходы PID
-    s->pid_out[0] = (int16_t)forse_pitch_rate;
-    s->pid_out[1] = (int16_t)forse_roll_rate;
-    s->pid_out[2] = (int16_t)forse_yaw_rate;
+    s->pid_out[0] = safe_int16((float)forse_pitch_rate);
+    s->pid_out[1] = safe_int16((float)forse_roll_rate);
+    s->pid_out[2] = safe_int16((float)forse_yaw_rate);
 
     // Моторы
     s->motors[0] = (uint16_t)total_power_1;
@@ -102,10 +110,10 @@ void Blackbox_Write(void) {
     // --- MTF / Optical Flow данные ---
     s->mtf_flow[0] = flow_velocity_x;
     s->mtf_flow[1] = flow_velocity_y;
-    s->mtf_speed[0] = (int16_t)(optical_flow_results.speed_cm_s_x * 10.0f);
-    s->mtf_speed[1] = (int16_t)(optical_flow_results.speed_cm_s_y * 10.0f);
-    s->mtf_target_angle[0] = (int16_t)(target_angle_pitch_mtf * 10.0f);
-    s->mtf_target_angle[1] = (int16_t)(target_angle_roll_mtf * 10.0f);
+    s->mtf_speed[0] = safe_int16(optical_flow_results.speed_cm_s_x * 10.0f);
+    s->mtf_speed[1] = safe_int16(optical_flow_results.speed_cm_s_y * 10.0f);
+    s->mtf_target_angle[0] = safe_int16(target_angle_pitch_mtf * 10.0f);
+    s->mtf_target_angle[1] = safe_int16(target_angle_roll_mtf * 10.0f);
     s->mtf_flow_quality = flow_quality;
     s->mtf_distance_strength = distance_strength;
 

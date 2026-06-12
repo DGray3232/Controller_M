@@ -1,6 +1,7 @@
 
 #include "vibration_analysis.h"
 #include "main.h"
+#include "config_param.h"
 #include "arm_math.h"
 #include <math.h>
 #include <string.h>
@@ -16,8 +17,9 @@
  *       чтобы не портить оригинальный кольцевой буфер данных.
  */
 float calculate_vibration_frequency(float *input_buffer, int fft_len, int f_sample, float *fft_output_buffer, float *fft_magnitude_buffer) {
-    // Копируем входные данные во временный буфер, чтобы не портить оригинал
-    float temp_buffer[fft_len];
+    // Статический буфер вместо VLA — фикс переполнения стека
+    static float temp_buffer[FFT_LEN];
+    if (fft_len > FFT_LEN) return 0.0f;
     memcpy(temp_buffer, input_buffer, fft_len * sizeof(float));
 
     // Применение оконной функции Ханна к временному буферу

@@ -110,7 +110,9 @@ void MAV_Init(UART_HandleTypeDef *huart) {
  */
 void MAV_Process(void) {
     uint16_t dma_curr_pos = MAV_RX_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(huart1.hdmarx);
-    while (old_pos != dma_curr_pos) {
+    if (dma_curr_pos >= MAV_RX_BUFFER_SIZE) dma_curr_pos = 0;
+    uint16_t processed = 0;
+    while (old_pos != dma_curr_pos && processed < MAV_RX_BUFFER_SIZE) {
         uint8_t byte = mav_rx_buffer[old_pos];
         // Парсим байт
         if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, &status)) {
@@ -121,6 +123,7 @@ void MAV_Process(void) {
         if (old_pos >= MAV_RX_BUFFER_SIZE) {
             old_pos = 0;
         }
+        processed++;
     }
 }
 /**
