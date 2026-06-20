@@ -550,7 +550,7 @@ void run_control_loop(){
 	actual_velocity_yaw_D = filtered_Gz_D;
     // MTF имеет высший приоритет при выполнении условий
 	if (distance > 100) {
-	    active_mode = FLIGHT_MODE_MTF;
+	    //active_mode = FLIGHT_MODE_MTF;
 	}
 	// Вычисляем target_velocity на основе активного режима
     switch(active_mode) {

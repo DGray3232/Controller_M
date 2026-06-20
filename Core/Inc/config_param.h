@@ -66,13 +66,13 @@
 #define INTEGRAL_LIMIT_DoM        5.0
 #define SCALE_FACTOR_DoM          1.0
 
-#define PITCH_PID_KP_RATE_DoM     7.0//11.0
+#define PITCH_PID_KP_RATE_DoM     6.0//11.0
 #define PITCH_PID_KI_RATE_DoM     0.1
 #define PITCH_PID_KD_RATE_DoM     0.15//0.15
-#define ROLL_PID_KP_RATE_DoM      7.0//11.0
+#define ROLL_PID_KP_RATE_DoM      6.0//11.0
 #define ROLL_PID_KI_RATE_DoM      0.1
 #define ROLL_PID_KD_RATE_DoM      0.15//0.15
-#define YAW_PID_KP_RATE_DoM       7.0//21.5
+#define YAW_PID_KP_RATE_DoM       6.0//21.5
 #define YAW_PID_KI_RATE_DoM       0.1
 #define YAW_PID_KD_RATE_DoM       0.15//0.1
 #define ALPHA_RATE_DoM            1.0
@@ -82,7 +82,7 @@
 
 #define PITCH_PID_KP_MTF_DoM      2.0
 #define PITCH_PID_KI_MTF_DoM      0.1 
-#define PITCH_PID_KD_MTF_DoM      0.1
+#define PITCH_PID_KD_MTF_DoM      0.15
 #define ROLL_PID_KP_MTF_DoM       2.0
 #define ROLL_PID_KI_MTF_DoM       0.1 
 #define ROLL_PID_KD_MTF_DoM       0.3 
