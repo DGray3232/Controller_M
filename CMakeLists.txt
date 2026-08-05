@@ -66,3 +66,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
     # Add user defined libraries
 )
+
+# Подключаем пользовательские исходники и библиотеки (не сбрасывается CubeMX)
+include(${CMAKE_SOURCE_DIR}/cmake/stm32cubemx/CMakeLists_user.txt)

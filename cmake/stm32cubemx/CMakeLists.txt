@@ -5,7 +5,6 @@ enable_language(C ASM)
 set(MX_Defines_Syms 
 	USE_HAL_DRIVER 
 	STM32F411xE
-    ARM_MATH_CM4
     $<$<CONFIG:Debug>:DEBUG>
 )
 
@@ -16,7 +15,6 @@ set(MX_Include_Dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/Include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/DSP/Include   
 )
 
 # STM32CubeMX generated application sources
@@ -24,7 +22,7 @@ set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/gpio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/dma.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/i2c.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/spi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/tim.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/usart.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32f4xx_it.c
@@ -32,26 +30,12 @@ set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/sysmem.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/syscalls.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../startup_stm32f411xe.s
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/vibration_analysis.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/AHRSAlgorithms.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/bmx055.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/mtf02.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/optical_flow_compensation.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/vibration_analysis.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/pid.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/globals.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/median_moving_average_filter.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/calculate_notch_coeffs.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/blackbox.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/remote_control_mavlink.c
-
 )
 
 # STM32 HAL/LL Drivers
 set(STM32_Drivers_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/system_stm32f4xx.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c
@@ -76,12 +60,11 @@ set(STM32_Drivers_Src
 
 # Link directories setup
 set(MX_LINK_DIRS
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/Lib/GCC)
+
 )
 # Project static libraries
 set(MX_LINK_LIBS 
     STM32_Drivers
-    arm_cortexM4lf_math
     ${TOOLCHAIN_LINK_LIBRARIES}
     
 )
@@ -104,8 +87,6 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE ${MX_LINK_DIRS})
 
 # Add libraries to the project
 target_link_libraries(${CMAKE_PROJECT_NAME} ${MX_LINK_LIBS})
-
-target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "-u_printf_float")
 
 # Add the map file to the list of files to be removed with 'clean' target
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES ADDITIONAL_CLEAN_FILES ${CMAKE_PROJECT_NAME}.map)
