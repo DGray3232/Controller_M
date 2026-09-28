@@ -1,0 +1,27 @@
+# ===== Артефакты сборки =====
+build/
+Debug/
+Release/
+cmake-build-*/
+*.elf
+*.hex
+*.bin
+*.map
+*.o
+*.d
+
+# ===== WSL / OS мусор =====
+*:Zone.Identifier
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ===== Логи =====
+*.log
+# ===== Бэкапы, документация, локальные настройки IDE =====
+Core/Inc/Backup/
+Core/Src/Backup/
+*.pdf
+.settings/
+.cproject
+.project

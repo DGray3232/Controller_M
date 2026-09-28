@@ -1,0 +1,66 @@
+#ifndef EKF3_H
+#define EKF3_H
+
+#include <stdint.h>
+#include <stdbool.h>
+
+/*
+ * EKF3 — loosely-coupled Kalman filter для MTF (оптический поток).
+ *
+ * Что оценивает: горизонтальную скорость и позицию в EARTH (NED) фрейме.
+ * Ориентацию НЕ оценивает — берёт кватернион Mahony извне (Quat_actual).
+ *
+ * Состояние x = [vn, ve, pn, pe]  (4 состояния).
+ *   vn,ve — горизонтальная скорость North/East [м/с]
+ *   pn,pe — горизонтальная позиция North/East [м]
+ *
+ * Прогноз (1 кГц): скорость — random walk (акселерометр в скорость НЕ
+ *                  интегрируем — его g·sin(θ)-протечка вносит больше вреда;
+ *                  акселерометр подаётся напрямую в D-член PID отдельно);
+ *                  позиция интегрируется из скорости.
+ * Коррекция (50 Гц): оптический поток (raw) минус ω×h, переведённый в earth,
+ *                    как измерение скорости.
+ *
+ * Единицы внутри: м, м/с. Наружу отдаём см/с для совместимости с PID.
+ */
+
+typedef struct {
+    float x[4];       // [vn, ve, pn, pe]
+    float P[16];      // ковариация 4x4, row-major
+
+    // Выходы (для control + логирования)
+    float vel_earth_mps[2];   // vn, ve [м/с]
+    float pos_earth_m[2];     // pn, pe [м]
+    float vel_body_cms[2];    // скорость в body [см/с] (для speed-PID)
+    float bias_mss[2];        // ЗАРЕЗЕРВИРОВАНО (всегда 0) — совместимость с логом blackbox
+    float innovation[2];      // невязка измерения потока [м/с] — для диагностики
+
+    bool  initialized;
+} EKF3_t;
+
+/* Инициализация: сброс состояния и ковариации */
+void ekf3_init(EKF3_t *e);
+
+/* Сброс позиции/скорости (при входе в MTF/ALT_HOLD — фиксируем новую точку). */
+void ekf3_reset(EKF3_t *e);
+
+/*
+ * Прогноз на частоте контура (1 кГц).
+ *  ax,ay,az — акселерометр в body [м/с²] (НЕ ИСПОЛЬЗУЮТСЯ — random walk).
+ *  q[4]     — кватернион body→earth [w,x,y,z]
+ *  dt       — шаг [с]
+ */
+void ekf3_predict(EKF3_t *e, float ax, float ay, float az, const float q[4], float dt);
+
+/*
+ * Коррекция по оптическому потоку (по приходу кадра, ~50 Гц).
+ *  flow_x, flow_y — raw поток из MTF-02 [(см/с)/м]
+ *  height_m       — высота (LiDAR с поправкой на наклон) [м]
+ *  q[4]           — кватернион body→earth
+ *  gx, gy, gz     — угловая скорость body [рад/с] (для ω×h)
+ *  quality        — flow_quality 0..255 (ниже порога — пропуск)
+ */
+void ekf3_update_flow(EKF3_t *e, int16_t flow_x, int16_t flow_y, float height_m,
+                      const float q[4], float gx, float gy, float gz, uint8_t quality);
+
+#endif /* EKF3_H */
