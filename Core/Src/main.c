@@ -1114,7 +1114,7 @@ int main(void)
 
     //snprintf(buf, sizeof(buf),"pitch %f,roll %f,yaw %f,filter_Gx %f,filter_Gy %f,filter_Gz %f\n",pitch,roll,yaw,filtered_Gx,filtered_Gy,filtered_Gz);
 	//HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-
+/*
     snprintf(buf, sizeof(buf),"fvY %d,fvX %d | OLD y %7.2f x %7.2f | EKF y %7.2f x %7.2f | innov y %7.2f x %7.2f | q %u\n",
     flow_velocity_y, flow_velocity_x,
     optical_flow_results.speed_cm_s_y, optical_flow_results.speed_cm_s_x,
@@ -1122,6 +1122,7 @@ int main(void)
     ekf3.innovation[1] * 100.0f, ekf3.innovation[0] * 100.0f,
     (unsigned)flow_quality);
  	HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+*/    
 /*
     // Отладочный вывод значений (раз в 100 мс)
     static uint32_t last_dbg_time = 0;

@@ -107,10 +107,10 @@
 #define INTEGRAL_LIMIT_RATE_DoM   5.0
 #define SCALE_FACTOR_RATE_DoM     1.0
 
-#define PITCH_PID_KP_MTF_DoM      0.12
-#define PITCH_PID_KI_MTF_DoM      0.06 
-#define ROLL_PID_KP_MTF_DoM       0.12
-#define ROLL_PID_KI_MTF_DoM       0.06 
+#define PITCH_PID_KP_MTF_DoM      0.2
+#define PITCH_PID_KI_MTF_DoM      0.1 
+#define ROLL_PID_KP_MTF_DoM       0.2
+#define ROLL_PID_KI_MTF_DoM       0.1 
 #if USE_EKF3
 // EKF3: контур на 1 кГц — D-компонента даёт дребезг от скачков потока, выключена.
 #define PITCH_PID_KD_MTF_DoM      0.0
@@ -139,8 +139,8 @@
                                                // Больше — жёстче держит высоту, но возможна перерегулировка/дрожь.
 
 /* --- ПИД позиции (удержание точки, частота зависит от USE_EKF3) --- */
-#define POSITION_PID_KP           0.25f  // [см/с на см] P-коэфф позиции: целевая скорость на 1 см ошибки. Больше — резче возврат в точку.
-#define POSITION_PID_KI           0.04f  // [1/с] I-коэфф позиции: компенсирует постоянное снесение (дрейф).
+#define POSITION_PID_KP           0.35f  // [см/с на см] P-коэфф позиции: целевая скорость на 1 см ошибки. Больше — резче возврат в точку.
+#define POSITION_PID_KI           0.06f  // [1/с] I-коэфф позиции: компенсирует постоянное снесение (дрейф).
 #if USE_EKF3
 #define POSITION_PID_KD           0.0f   // EKF3 (1 кГц): D даёт дребезг — выключен.
 #else
