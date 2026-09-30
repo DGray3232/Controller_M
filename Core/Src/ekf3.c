@@ -136,8 +136,8 @@ void ekf3_update_flow(EKF3_t *e, int16_t flow_x, int16_t flow_y, float height_m,
     float v_flow_y = fvy * EKF3_FLOW_SIGN_Y * height_m * 0.01f;
 
     // Ложная скорость от вращения ω×h (неперекрёстная связка, gain откалиброван)
-    float v_rot_x = EKF3_ROT_SIGN_X * gx * height_m * EKF3_ROT_COMP_GAIN;
-    float v_rot_y = EKF3_ROT_SIGN_Y * gy * height_m * EKF3_ROT_COMP_GAIN;
+    float v_rot_x = EKF3_ROT_SIGN_X * gx * height_m * EKF3_ROT_COMP_GAIN_X;
+    float v_rot_y = EKF3_ROT_SIGN_Y * gy * height_m * EKF3_ROT_COMP_GAIN_Y;
 
     float v_body_x = v_flow_x - v_rot_x;
     float v_body_y = v_flow_y - v_rot_y;

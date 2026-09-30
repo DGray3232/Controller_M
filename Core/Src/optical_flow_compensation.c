@@ -98,8 +98,8 @@ void calculate_linear_velocity_from_saved_data(OpticalFlowResults_t* results,
         float angular_velocity_y = accumulated_rotation_y / time_s;
 
         // Линейная скорость от вращения: V = ω * h (м/с), с калибровочным множителем
-        float V_linear_x_gyro = angular_velocity_x * results->distance_m * OF_ROT_COMP_GAIN;
-        float V_linear_y_gyro = angular_velocity_y * results->distance_m * OF_ROT_COMP_GAIN;
+        float V_linear_x_gyro = angular_velocity_x * results->distance_m * OF_ROT_COMP_GAIN_X;
+        float V_linear_y_gyro = angular_velocity_y * results->distance_m * OF_ROT_COMP_GAIN_Y;
 
         // Результат в см/с
         results->speed_cm_s_x = V_linear_x_gyro * 100.0f;

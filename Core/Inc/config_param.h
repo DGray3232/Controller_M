@@ -33,7 +33,8 @@
 /* --- Оптический поток (компенсация вращения) --- */
 #define OF_QUALITY_MIN        25      // [0..255] минимальное качество потока; ниже — кадр игнорируется
 #define OF_SENSOR_LATENCY_MS  20      // [мс] задержка датчика (≈1 кадр) — окно гироскопа сдвигается назад
-#define OF_ROT_COMP_GAIN      1.6f    // множитель амплитуды компенсации вращения ω×h (калибровка: corr(скорость,гиро)→0)
+#define OF_ROT_COMP_GAIN_X    1.1f    // множитель компенсации вращения по X (калибровка: corr(скорость,гиро)→0)
+#define OF_ROT_COMP_GAIN_Y    1.7f    // множитель компенсации вращения по Y
 
 /* --- EKF3 (loosely-coupled, optical flow + accel, MTF) --- */
 #define USE_EKF3              1       // 1 = EKF3 идёт в PID (земная скорость+позиция), 0 = текущая компенсация.
@@ -50,7 +51,8 @@
 #define EKF3_FLOW_SWAP        0       // 1 — поменять оси X/Y потока местами
 #define EKF3_ROT_SIGN_X      -1.0f    // знак ложной скорости по X от вращения (ω×h)
 #define EKF3_ROT_SIGN_Y       1.0f    // знак ложной скорости по Y от вращения (ω×h)
-#define EKF3_ROT_COMP_GAIN    1.6f    // множитель амплитуды компенсации вращения ω×h (калибровка: corr(скорость,гиро)→0)
+#define EKF3_ROT_COMP_GAIN_X  1.1f    // множитель компенсации вращения по X
+#define EKF3_ROT_COMP_GAIN_Y  1.7f    // множитель компенсации вращения по Y
 
 /* --- Multishot и моторы --- */
 #define MULTISHOT_MIN 500
@@ -107,10 +109,10 @@
 #define INTEGRAL_LIMIT_RATE_DoM   5.0
 #define SCALE_FACTOR_RATE_DoM     1.0
 
-#define PITCH_PID_KP_MTF_DoM      0.2
-#define PITCH_PID_KI_MTF_DoM      0.1 
-#define ROLL_PID_KP_MTF_DoM       0.2
-#define ROLL_PID_KI_MTF_DoM       0.1 
+#define PITCH_PID_KP_MTF_DoM      0.15
+#define PITCH_PID_KI_MTF_DoM      0.12 
+#define ROLL_PID_KP_MTF_DoM       0.15
+#define ROLL_PID_KI_MTF_DoM       0.12 
 #if USE_EKF3
 // EKF3: контур на 1 кГц — D-компонента даёт дребезг от скачков потока, выключена.
 #define PITCH_PID_KD_MTF_DoM      0.0
@@ -128,7 +130,7 @@
 /* D-член от акселерометра (горизонтальное ускорение) — демпфирование скоростного контура.
  * Скорость от потока ступенчатая (random-walk), поэтому обычный D по производной скорости не работает.
  * Вместо этого берём ускорение напрямую из акселерометра (без интеграции → без накопления bias/g-протечки). */
-#define MTF_D_KD              0.03f   // KD D-члена [°/ (см/с²)] — на сколько градусов гасить наклон на 1 см/с² ускорения
+#define MTF_D_KD              0.08f   // KD D-члена [°/ (см/с²)] — на сколько градусов гасить наклон на 1 см/с² ускорения
 #define MTF_D_ACC_SIGN_X      1.0f    // знак горизонтального ускорения по X (калибровка: если раскачивает — инвертировать)
 #define MTF_D_ACC_SIGN_Y      1.0f    // знак горизонтального ускорения по Y
 
