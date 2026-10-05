@@ -34,8 +34,8 @@
 #define OF_QUALITY_MIN        25      // [0..255] минимальное качество потока; ниже — кадр игнорируется
 #define OPTICAL_FLOW_UPDATE_PERIOD_MS 20  // [мс] период кадров потока (частота MTF-02 ~50 Гц)
 #define OF_SENSOR_LATENCY_MS  20      // [мс] задержка датчика (≈1 кадр) — окно гироскопа сдвигается назад
-#define OF_ROT_COMP_GAIN_X    1.1f    // множитель компенсации вращения по X (калибровка: corr(скорость,гиро)→0)
-#define OF_ROT_COMP_GAIN_Y    1.2f    // множитель компенсации вращения по Y
+#define OF_ROT_COMP_GAIN_X    1.0f    // множитель компенсации вращения по X (калибровка: corr(скорость,гиро)→0)
+#define OF_ROT_COMP_GAIN_Y    1.0f    // множитель компенсации вращения по Y
 
 /* --- EKF3 (loosely-coupled, optical flow + accel, MTF) --- */
 #define USE_EKF3              1       // 1 = EKF3 идёт в PID (земная скорость+позиция), 0 = текущая компенсация.

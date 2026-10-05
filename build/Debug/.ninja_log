@@ -48,3 +48,11 @@
 387	954	8055983276602695	cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c.obj	c80e50a49404431d
 53	318	8129297940465360	CMakeFiles/Controller_M.dir/Core/Src/icm42688.c.obj	42741a8d5ce53557
 42	189	8129297940365028	CMakeFiles/Controller_M.dir/Core/Src/ekf3.c.obj	d8b2974bb9b1f66e
+25	196	8129311952375469	CMakeFiles/Controller_M.dir/Core/Src/ekf3.c.obj	d8b2974bb9b1f66e
+9	299	8129311952225147	CMakeFiles/Controller_M.dir/Core/Src/globals.c.obj	27cbae4c4b29a216
+30	306	8129311952425712	CMakeFiles/Controller_M.dir/Core/Src/vibration_analysis.c.obj	3cd1d47c026e25b4
+20	314	8129311952325423	CMakeFiles/Controller_M.dir/Core/Src/optical_flow_compensation.c.obj	62bb832424543b12
+36	322	8129311952490828	CMakeFiles/Controller_M.dir/Core/Src/icm42688.c.obj	42741a8d5ce53557
+15	331	8129311952270216	CMakeFiles/Controller_M.dir/Core/Src/blackbox.c.obj	8837e30be8a34cce
+4	681	8129311952169917	CMakeFiles/Controller_M.dir/Core/Src/main.c.obj	a668fdcf356c59b3
+681	961	8129311958934686	Controller_M.elf	c3b30f3a05f98fee
