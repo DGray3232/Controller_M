@@ -1,0 +1,22 @@
+# --- Сборка / артефакты (не коммитим) ---
+build/
+Debug/
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.a
+*.lib
+*.map
+*.list
+*.out
+
+# --- clangd / кэш ---
+.cache/
+*.idx
+.ninja_deps
+.ninja_log
+
+# --- Временные / логи ---
+*.log
