@@ -27,8 +27,9 @@ bool micolink_parse_char(MICOLINK_MSG_t* msg, uint8_t data);
   *         https://micoair.com/docs/decoding-micolink-messages-from-mtf-01/
   */
 void micolink_decode(uint8_t data,
-        uint16_t *distance, uint16_t *distance_strength, uint8_t *distance_precision, uint8_t *distance_status,
-        int16_t *flow_velocity_x, int16_t *flow_velocity_y, uint8_t *flow_quality, uint8_t *flow_status)
+        uint32_t *distance, uint8_t *distance_strength, uint8_t *distance_precision, uint8_t *distance_status,
+        int16_t *flow_velocity_x, int16_t *flow_velocity_y, uint8_t *flow_quality, uint8_t *flow_status,
+        uint8_t *frame_received)
 {
     // Статическая структура сообщения для сохранения состояния между вызовами функции
     static MICOLINK_MSG_t msg;
@@ -54,6 +55,8 @@ void micolink_decode(uint8_t data,
             *flow_velocity_y = payload.flow_vel_y;
             *flow_quality = payload.flow_quality;
             *flow_status = payload.flow_status;
+            // Помечаем, что получен полный кадр с данными потока
+            if (frame_received != NULL) *frame_received = 1;
             break;
         }
         default:

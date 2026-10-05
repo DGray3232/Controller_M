@@ -57,4 +57,13 @@ typedef struct
 
 #pragma pack ()
 
+/*
+ * Декодирование байта протокола MicoLink (state-machine, кормить по одному байту).
+ * Типы указателей соответствуют globals.c: uint32_t distance, uint8_t distance_strength.
+ */
+void micolink_decode(uint8_t data,
+        uint32_t *distance, uint8_t *distance_strength, uint8_t *distance_precision, uint8_t *distance_status,
+        int16_t *flow_velocity_x, int16_t *flow_velocity_y, uint8_t *flow_quality, uint8_t *flow_status,
+        uint8_t *frame_received);
+
 #endif

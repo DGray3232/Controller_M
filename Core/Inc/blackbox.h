@@ -32,7 +32,12 @@ typedef struct __attribute__((packed)) {
     int16_t  mtf_target_angle[2];   // target_angle_pitch/roll_mtf [град * 10]
     uint8_t  mtf_flow_quality;      // flow_quality (0-255)
     uint8_t  mtf_distance_strength; // distance_strength (0-255)
-} BlackboxSample_t;                  // 60 байт на запись → 60 КБ на буфер
+    // --- EKF3 данные (для A/B сравнения с текущей компенсацией) ---
+    int16_t  ekf_vel_body[2];       // ekf3.vel_body_cms [см/с * 10]
+    int16_t  ekf_pos[2];            // ekf3.pos_earth_m [см]
+    int16_t  ekf_innov[2];          // ekf3.innovation [см/с]
+    int16_t  ekf_bias[2];           // ekf3.bias_mss [м/с² * 1000]
+} BlackboxSample_t;                  // 76 байт на запись → 76 КБ на буфер
 
 // Инициализация blackbox
 void Blackbox_Init(void);

@@ -6,20 +6,27 @@ float target_angle_pitch_mtf = 0.0f;
 float target_angle_roll_mtf = 0.0f;
 float smooth_altitude_mm = 0.0f;
 OpticalFlowResults_t optical_flow_results = {0};
+EKF3_t ekf3 = {0};
 
-BMX055_t BMX055;
+float imu_ax = 0.0f, imu_ay = 0.0f, imu_az = 0.0f;
+float imu_gx = 0.0f, imu_gy = 0.0f, imu_gz = 0.0f;
+float imu_temp = 23.0f;
 
 PID_2_Controller pitch_pid_rate;
 PID_2_Controller roll_pid_rate;
 PID_2_Controller yaw_pid_rate;
 
-PID_Controller altitude_pid;
 float target_altitude_mm = 0.0f;
-float altitude_error_mm = 0.0f;
-float throttle_altitude_correction = 0.0f;
-bool altitude_hold_active = false;
-bool last_button_2_state = false;
+float hover_throttle_base = 0.0f;
 float final_throttle = 0;
+
+PID_Controller position_pid_x;
+PID_Controller position_pid_y;
+float pos_x = 0.0f;
+float pos_y = 0.0f;
+float target_pos_x = 0.0f;
+float target_pos_y = 0.0f;
+bool position_hold_active = false;
 
 MedianFilter Gyro_x = {0};
 MedianFilter Gyro_y = {0};
@@ -84,6 +91,7 @@ uint16_t potentiometer_value = 0;
 int16_t right_left = 0;
 uint16_t button = 0;
 uint16_t button_2 = 0;
+uint16_t button_alt_hold = 0;
 
 bool mavlink_connection_active = false;
 uint32_t mav_last_packet_time = 0;
@@ -223,7 +231,7 @@ float previous_freq_y = 0;
 float previous_freq_z = 0;
 
 // Данные MTF-02 (оптический поток + дальномер)
-uint8_t buffer_message_mtf02[MIKOLINL];
+uint8_t buffer_message_mtf02[MTF_DMA_BUFFER_SIZE];
 
 uint32_t distance = 0;
 uint8_t distance_strength = 0;
@@ -233,6 +241,7 @@ int16_t flow_velocity_x = 0;
 int16_t flow_velocity_y = 0;
 uint8_t flow_quality = 0;
 uint8_t flow_status = 0;
+volatile uint8_t flow_frame_received = 0;
 
 // Режимы и флаги
 uint8_t flight_mode = FLIGHT_MODE_ACRO;
@@ -241,15 +250,6 @@ uint8_t active_mode = 0;
 
 int count_calculate_frequency = 0;
 uint32_t count_calculate_frequency_flag = 0;
-
-uint8_t dma_accel_buffer[7];
-uint8_t dma_gyro_buffer[6];
-
-volatile uint8_t current_device = 0;
-volatile uint8_t data_ready_gyro = 0;
-volatile uint8_t data_ready_accel = 0;
-volatile uint8_t i2c_busy_flag = 0;
-uint32_t i2c_timeout_counter = 0;
 
 float fft_output_buffer[FFT_LEN * 2];
 float fft_magnitude_buffer[FFT_LEN / 2];
@@ -320,4 +320,4 @@ float32_t Coeffs_notch_z[NUM_STAGES_GYRO_NOTCH * 5] = {
       1.0f, 0.0f, 0.0f, 0.0f, 0.0f
 };
 
-char buf[250];
+char buf[512];

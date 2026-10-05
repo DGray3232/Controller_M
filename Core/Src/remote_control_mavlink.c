@@ -67,6 +67,8 @@ static void handle_rc_channels(const mavlink_message_t* message) {
     right_left          = rc.chan4_raw;      // Yaw
     button              = rc.chan5_raw;     // Aux 1
     button_2            = rc.chan6_raw;     // Aux 2
+    button_mode         = rc.chan7_raw;     // Aux 3: режим 0=ACRO / 1=ANGLE
+    button_alt_hold     = rc.chan8_raw;     // Aux 4: удержание высоты 0/1
 
     // Обновляем таймер
     mav_last_packet_time = HAL_GetTick();
@@ -158,6 +160,7 @@ void MAV_Check_Connection(UART_HandleTypeDef *huart) {
         potentiometer_value = 0; // Throttle min (или center, зависит от вашей логики!)
         button = 0;
         button_2 = 0;
+        button_alt_hold = 0;
         // Проверяем ошибки на шине (Overrun, Noise, Framing errors)
         uint32_t srflags = huart->Instance->SR;
         // Если установлен флаг ORE (Overrun) или другие ошибки.

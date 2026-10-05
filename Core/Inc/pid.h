@@ -1,7 +1,7 @@
 #ifndef PID_H_
 #define PID_H_
 
-// Структура для PID-контроллера (используется для altitude_pid)
+// Структура для PID-контроллера (используется для позиционных PID)
 typedef struct {
 	float Kp;
 	float Ki;

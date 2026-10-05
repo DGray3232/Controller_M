@@ -11,7 +11,6 @@
 #include "config_param.h"
 
 // Подключаем заголовки с определениями типов (структур)
-#include "bmx055.h"
 #include "AHRSAlgorithms.h"
 #include "pid.h"
 #include "median_moving_average_filter.h"
@@ -19,25 +18,30 @@
 #include "vibration_analysis.h"
 #include "mtf02.h"
 #include "optical_flow_compensation.h"
+#include "ekf3.h"
 
 /* --- Структуры и датчики --- */
 extern GyroIntegration_t gyro_integration;
 extern OpticalFlowResults_t optical_flow_results;
-extern BMX055_t BMX055;
+extern EKF3_t ekf3;
 
 /* --- PID Контроллеры --- */
 extern PID_2_Controller pitch_pid_rate;
 extern PID_2_Controller roll_pid_rate;
 extern PID_2_Controller yaw_pid_rate;
 
-extern PID_Controller altitude_pid;
 extern float target_altitude_mm;
-extern float altitude_error_mm;
-extern float throttle_altitude_correction;
-extern bool altitude_hold_active;
-extern bool last_button_2_state;
+extern float hover_throttle_base;
 extern float final_throttle;
 extern float smooth_altitude_mm;
+
+extern PID_Controller position_pid_x;
+extern PID_Controller position_pid_y;
+extern float pos_x;
+extern float pos_y;
+extern float target_pos_x;
+extern float target_pos_y;
+extern bool position_hold_active;
 
 extern PID_DoM_Controller pitch_pid_rate_DoM;
 extern PID_DoM_Controller roll_pid_rate_DoM;
@@ -105,11 +109,15 @@ extern int16_t right_left;
 extern uint16_t potentiometer_value;
 extern uint16_t button;
 extern uint16_t button_2;
+extern uint16_t button_alt_hold;
 
 extern bool mavlink_connection_active;
 extern uint32_t mav_last_packet_time;
 
-/* --- Данные IMU и вычисления --- */
+/* --- Данные IMU (временная замена BMX055, будет ICM42688) --- */
+extern float imu_ax, imu_ay, imu_az;    // g
+extern float imu_gx, imu_gy, imu_gz;    // град/с
+extern float imu_temp;                   // °C
 extern float32_t Ax[1];
 extern float32_t Ay[1];
 extern float32_t Az[1];
@@ -245,7 +253,7 @@ extern float previous_freq_y;
 extern float previous_freq_z;
 
 /* --- Оптический поток и данные --- */
-extern uint8_t buffer_message_mtf02[MIKOLINL];
+extern uint8_t buffer_message_mtf02[MTF_DMA_BUFFER_SIZE];
 extern uint32_t distance;
 extern uint8_t distance_strength;
 extern uint8_t distance_precision;
@@ -254,6 +262,7 @@ extern int16_t flow_velocity_x;
 extern int16_t flow_velocity_y;
 extern uint8_t flow_quality;
 extern uint8_t flow_status;
+extern volatile uint8_t flow_frame_received;   // флаг: пришёл новый кадр потока (ставит get_mtf_data)
 
 /* --- Режимы и флаги --- */
 extern uint8_t flight_mode;
@@ -262,17 +271,6 @@ extern uint8_t active_mode;
 
 extern int count_calculate_frequency;
 extern uint32_t count_calculate_frequency_flag;
-
-/* --- Буферы I2C DMA --- */
-extern uint8_t dma_accel_buffer[7];
-extern uint8_t dma_gyro_buffer[6];
-
-/* --- Флаги состояния --- */
-extern volatile uint8_t current_device;
-extern volatile uint8_t data_ready_gyro;
-extern volatile uint8_t data_ready_accel;
-extern volatile uint8_t i2c_busy_flag;
-extern uint32_t i2c_timeout_counter;
 
 /* --- Внутренние буферы фильтров --- */
 extern float fft_output_buffer[FFT_LEN * 2];
@@ -314,6 +312,6 @@ extern float32_t Coeffs_notch_x[NUM_STAGES_GYRO_NOTCH * 5];
 extern float32_t Coeffs_notch_y[NUM_STAGES_GYRO_NOTCH * 5];
 extern float32_t Coeffs_notch_z[NUM_STAGES_GYRO_NOTCH * 5];
 
-extern char buf[250];
+extern char buf[512];
 
 #endif /* GLOBALS_H */

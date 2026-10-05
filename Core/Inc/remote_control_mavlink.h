@@ -19,6 +19,8 @@ extern int16_t right_left;
 extern uint16_t potentiometer_value;
 extern uint16_t button;
 extern uint16_t button_2;
+extern uint16_t button_alt_hold;
+extern int button_mode;
 
 void MAV_Init(UART_HandleTypeDef *huart);
 void MAV_Process(void);           // Только парсинг

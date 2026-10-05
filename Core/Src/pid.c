@@ -81,7 +81,7 @@ float PID_Compute(PID_Controller *pid, float error, float dt) {
 
 
 /**
- * @brief  Сбрасывает накопленные состояния PID-регулятора (для altitude_pid)
+ * @brief  Сбрасывает накопленные состояния PID-регулятора
  */
 void PID_Reset(PID_Controller *pid) {
     pid->integral = 0.0;

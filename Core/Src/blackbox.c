@@ -39,8 +39,9 @@ void Blackbox_Write(void) {
     // Заморожено (идет выгрузка) — ничего не пишем
     if (frozen) return;
 
-    // Пишем ТОЛЬКО в полёте (distance > 100) И с включёнными моторами
-    if (distance <= 100 || m1_pulse[0] <= MIN_PULSE_WIDTH) {
+    // Пишем при валидной высоте (distance > 100), без требования включённых моторов —
+    // чтобы стендовую калибровку компенсации вращения можно было снимать в руках без арма.
+    if (distance <= 100) {
         was_airborne = false;  // сброс — при следующем взлёте init
         return;
     }
@@ -100,8 +101,8 @@ void Blackbox_Write(void) {
     // Газ
     s->throttle = throttle_mshot;
 
-    // Коррекция высоты
-    s->altitude_correction = (int16_t)throttle_altitude_correction;
+    // Коррекция высоты (старый PID высоты удалён — здесь 0)
+    s->altitude_correction = 0;
 
     // Режим и ARM (по фактическому состоянию моторов)
     s->flight_mode = active_mode;
@@ -116,6 +117,16 @@ void Blackbox_Write(void) {
     s->mtf_target_angle[1] = safe_int16(target_angle_roll_mtf * 10.0f);
     s->mtf_flow_quality = flow_quality;
     s->mtf_distance_strength = distance_strength;
+
+    // --- EKF3 данные (A/B сравнение) ---
+    s->ekf_vel_body[0] = safe_int16(ekf3.vel_body_cms[0] * 10.0f);
+    s->ekf_vel_body[1] = safe_int16(ekf3.vel_body_cms[1] * 10.0f);
+    s->ekf_pos[0] = safe_int16(ekf3.pos_earth_m[0] * 100.0f);
+    s->ekf_pos[1] = safe_int16(ekf3.pos_earth_m[1] * 100.0f);
+    s->ekf_innov[0] = safe_int16(ekf3.innovation[0] * 100.0f);
+    s->ekf_innov[1] = safe_int16(ekf3.innovation[1] * 100.0f);
+    s->ekf_bias[0] = safe_int16(ekf3.bias_mss[0] * 1000.0f);
+    s->ekf_bias[1] = safe_int16(ekf3.bias_mss[1] * 1000.0f);
 
     // Продвигаем указатель
     write_idx = (write_idx + 1) % BLACKBOX_BUFFER_SIZE;
@@ -142,10 +153,11 @@ void Blackbox_Dump(void) {
     }
 
     char header[] = "t_ms,gx,gy,gz,ax,ay,az,pitch,roll,dist,erP,erR,erY,pidP,pidR,pidY,m1,m2,m3,m4,thr,altCorr,mode,arm,"
-                    "fvx,fvy,spdX,spdY,tgP,tgR,fQ,dStr\r\n";
+                    "fvx,fvy,spdX,spdY,tgP,tgR,fQ,dStr,"
+                    "ekvx,ekvy,ekpx,ekpy,ekix,ekiy,ekbx,ekby\r\n";
     HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
 
-    char line[192];
+    char line[240];
     for (uint16_t i = 0; i < total; i++) {
         uint16_t idx = (start + i) % BLACKBOX_BUFFER_SIZE;
         BlackboxSample_t *s = &buffer[idx];
@@ -153,7 +165,8 @@ void Blackbox_Dump(void) {
         int len = snprintf(line, sizeof(line),
             "%u,%d,%d,%d,%d,%d,%d,%d,%d,%u,%d,%d,%d,%d,%d,%d,"
             "%u,%u,%u,%u,%u,%d,%u,%u,"
-            "%d,%d,%d,%d,%d,%d,%u,%u\r\n",
+            "%d,%d,%d,%d,%d,%d,%u,%u,"
+            "%d,%d,%d,%d,%d,%d,%d,%d\r\n",
             s->timestamp,
             s->gyro[0], s->gyro[1], s->gyro[2],
             s->accel[0], s->accel[1], s->accel[2],
@@ -171,7 +184,12 @@ void Blackbox_Dump(void) {
             s->mtf_speed[0], s->mtf_speed[1],
             s->mtf_target_angle[0], s->mtf_target_angle[1],
             (unsigned int)s->mtf_flow_quality,
-            (unsigned int)s->mtf_distance_strength);
+            (unsigned int)s->mtf_distance_strength,
+            // EKF3 данные
+            s->ekf_vel_body[0], s->ekf_vel_body[1],
+            s->ekf_pos[0], s->ekf_pos[1],
+            s->ekf_innov[0], s->ekf_innov[1],
+            s->ekf_bias[0], s->ekf_bias[1]);
 
         if (len > 0) {
             HAL_UART_Transmit(&huart2, (uint8_t*)line, len, HAL_MAX_DELAY);
