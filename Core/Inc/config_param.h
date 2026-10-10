@@ -86,37 +86,37 @@
 #define MAX_TILT_MTF           15.0f  // максимальный наклон в MTF/ALT_HOLD [°] — меньше = медленнее разгон (для тесного помещения)
 
 /* --- PID регуляторы (DoM) --- */
-#define PITCH_PID_KP_DoM          4.5 
+#define PITCH_PID_KP_DoM          3.0 
 #define PITCH_PID_KI_DoM          0.1
-#define PITCH_PID_KD_DoM          0.2 
-#define ROLL_PID_KP_DoM           4.5 
+#define PITCH_PID_KD_DoM          0.05 
+#define ROLL_PID_KP_DoM           3.0 
 #define ROLL_PID_KI_DoM           0.1
-#define ROLL_PID_KD_DoM           0.2
-#define YAW_PID_KP_DoM            3.0  
+#define ROLL_PID_KD_DoM           0.05
+#define YAW_PID_KP_DoM            5.0  
 #define YAW_PID_KI_DoM            0.1
-#define YAW_PID_KD_DoM            0.2 
+#define YAW_PID_KD_DoM            0.05 
 #define ALPHA_DoM                 1.0
 #define ALPHA_DERIVATIVE_DoM      0.1
 #define INTEGRAL_LIMIT_DoM        5.0
 #define SCALE_FACTOR_DoM          1.0
 
-#define PITCH_PID_KP_RATE_DoM     5.0
+#define PITCH_PID_KP_RATE_DoM     3.0
 #define PITCH_PID_KI_RATE_DoM     0.1
-#define PITCH_PID_KD_RATE_DoM     0.35 
-#define ROLL_PID_KP_RATE_DoM      5.0
+#define PITCH_PID_KD_RATE_DoM     0.05 
+#define ROLL_PID_KP_RATE_DoM      3.0
 #define ROLL_PID_KI_RATE_DoM      0.1
-#define ROLL_PID_KD_RATE_DoM      0.35 
+#define ROLL_PID_KD_RATE_DoM      0.05 
 #define YAW_PID_KP_RATE_DoM       7.0
 #define YAW_PID_KI_RATE_DoM       0.4
-#define YAW_PID_KD_RATE_DoM       0.2
+#define YAW_PID_KD_RATE_DoM       0.05
 #define ALPHA_RATE_DoM            1.0
 #define ALPHA_DERIVATIVE_RATE_DoM 0.1
 #define INTEGRAL_LIMIT_RATE_DoM   5.0
 #define SCALE_FACTOR_RATE_DoM     1.0
 
-#define PITCH_PID_KP_MTF_DoM      0.15
+#define PITCH_PID_KP_MTF_DoM      0.35
 #define PITCH_PID_KI_MTF_DoM      0.12 
-#define ROLL_PID_KP_MTF_DoM       0.15
+#define ROLL_PID_KP_MTF_DoM       0.35
 #define ROLL_PID_KI_MTF_DoM       0.12 
 #if USE_EKF3
 // EKF3: контур на 1 кГц — D-компонента даёт дребезг от скачков потока, выключена.
@@ -141,12 +141,17 @@
 
 /* --- Высотная модель ALT_HOLD (захват высоты, газ/стики игнорируются) --- */
 #define GROUND_DISTANCE_MM   100     // [мм] Расстояние LiDAR, ниже которого считаем «на земле» (захват высоты при входе в ALT_HOLD)
-#define ALTITUDE_HOLD_GAIN_TICKS_PER_MM  0.4f  // [тик/мм] P-регулятор высоты: тиков газа на 1 мм ошибки высоты.
+#define ALTITUDE_HOLD_GAIN_TICKS_PER_MM  0.5f  // [тик/мм] P-регулятор высоты: тиков газа на 1 мм ошибки высоты.
                                                // База тяги = фактическая мощность на моторах в момент включения удержания.
                                                // Больше — жёстче держит высоту, но возможна перерегулировка/дрожь.
+#define ALT_HOLD_POT_TO_MM        10.0f   // [мм/тик] смещение целевой высоты на 1 тик крестовины (pot, 0..1000)
+#define ALT_HOLD_CLIMB_RATE_MAX   200.0f  // [мм/с] предел вертикальной скорости изменения целевой высоты (плавный взлёт/посадка)
+#define ALT_HOLD_TAKEOFF_ALTITUDE 700.0f  // [мм] высота, на которую дрон взлетает с земли при входе в ALT_HOLD
+#define ALT_HOLD_TAKEOFF_THROTTLE 720.0f  // [тик] база тяги при взлёте с земли (подобрать ≈ чуть ниже тяги висения)
+#define ALT_HOLD_POS_HOLD_MIN_ALTITUDE 300.0f  // [мм] ниже этой высоты позиционный контур выключен (вертикальный взлёт)
 
 /* --- ПИД позиции (удержание точки, частота зависит от USE_EKF3) --- */
-#define POSITION_PID_KP           0.4f  // [см/с на см] P-коэфф позиции: целевая скорость на 1 см ошибки. Больше — резче возврат в точку.
+#define POSITION_PID_KP           0.5f  // [см/с на см] P-коэфф позиции: целевая скорость на 1 см ошибки. Больше — резче возврат в точку.
 #define POSITION_PID_KI           0.06f  // [1/с] I-коэфф позиции: компенсирует постоянное снесение (дрейф).
 #if USE_EKF3
 #define POSITION_PID_KD           0.0f   // EKF3 (1 кГц): D даёт дребезг — выключен.
@@ -154,6 +159,6 @@
 #define POSITION_PID_KD           0.01f  // Старая схема (50 Гц): лёгкое демпфирование.
 #endif
 #define POSITION_INTEGRAL_LIMIT   20.0f // [см/с] Предел накопления интеграла позиции (анти-виндап).
-#define POSITION_MAX_SPEED        10.0f // [см/с] Ограничение целевой горизонтальной скорости из позиционного ПИД и от стика.
+#define POSITION_MAX_SPEED        40.0f // [см/с] Ограничение целевой горизонтальной скорости из позиционного ПИД и от стика.
 
 #endif /* CONFIG_PARAM_H */

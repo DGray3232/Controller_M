@@ -625,11 +625,21 @@ void run_control_loop(){
     }
     // Вошли в ALT_HOLD: захват текущей высоты, базовой тяги и фиксация точки
     if (active_mode == FLIGHT_MODE_ALT_HOLD && prev_active_mode != FLIGHT_MODE_ALT_HOLD) {
-        target_altitude_mm = (distance > GROUND_DISTANCE_MM) ? (float)distance : 0.0f;
-        smooth_altitude_mm = target_altitude_mm;
-        // База тяги = фактическая тяга на моторах в момент включения удержания.
-        // Она уже соответствует текущей высоте → нет скачка при входе в режим.
-        hover_throttle_base = (float)throttle_mshot;
+        // Взлёт с земли vs вход в висе.
+        if (distance < GROUND_DISTANCE_MM) {
+            // С земли: база тяги = взлётная, цель = высота взлёта. target_altitude_mm
+            // остаётся текущей (≈0), а плавный рост к цели обеспечит climb-rate limit.
+            hover_throttle_base = ALT_HOLD_TAKEOFF_THROTTLE;
+            alt_hold_capture_alt_mm = ALT_HOLD_TAKEOFF_ALTITUDE;
+        } else {
+            // В висе: база = текущая тяга, цель = текущая высота (нет скачка).
+            hover_throttle_base = (float)throttle_mshot;
+            alt_hold_capture_alt_mm = (float)distance;
+        }
+        target_altitude_mm = (float)distance;
+        smooth_altitude_mm = (float)distance;
+        // Захват крестовины: дальше целевая высота смещается от pot (D-pad вверх/вниз)
+        alt_hold_capture_pot = (float)potentiometer_value;
         target_pos_x = pos_x;
         target_pos_y = pos_y;
         position_hold_active = true;
@@ -848,12 +858,33 @@ void run_control_loop(){
         target_angle_pitch_mtf = constrain_float(target_angle_pitch_mtf, -MAX_TILT_MTF, MAX_TILT_MTF);
         target_angle_roll_mtf = constrain_float(target_angle_roll_mtf, -MAX_TILT_MTF, MAX_TILT_MTF);
 
+        // Взлётная фаза: пока высота мала, держим дрон ровно (вертикальный взлёт).
+        // На малой высоте поток мусорный → позиционный контур даёт ложный наклон и заваливает дрон.
+        if (smooth_altitude_mm < ALT_HOLD_POS_HOLD_MIN_ALTITUDE) {
+            target_angle_pitch_mtf = 0.0f;
+            target_angle_roll_mtf = 0.0f;
+            PID_Reset(&position_pid_x);
+            PID_Reset(&position_pid_y);
+        }
+
         // Высота: сглаживание LiDAR (50 Гц по кадру — LiDAR в EKF горизонтали не входит)
         if (optical_flow_results.new_optical_data_available) {
             float raw_alt = (float)distance * cosf(pitch * DEG_TO_RAD) * cosf(roll * DEG_TO_RAD);
             smooth_altitude_mm = smooth_altitude_mm * 0.7f + raw_alt * 0.3f;
             optical_flow_results.new_optical_data_available = false;
         }
+
+        // Крестовина (pot) плавно смещает целевую высоту с лимитом вертикальной скорости.
+        // pot (0..1000) инкрементируется D-pad'ом на пульте: вверх/вниз меняет целевую высоту.
+        float desired_alt = alt_hold_capture_alt_mm
+                          + ((float)potentiometer_value - alt_hold_capture_pot) * ALT_HOLD_POT_TO_MM;
+        if (desired_alt < MTF_MIN_VALID_ALTITUDE_MM) desired_alt = MTF_MIN_VALID_ALTITUDE_MM;
+        if (desired_alt > MTF_MAX_ALTITUDE_MM) desired_alt = MTF_MAX_ALTITUDE_MM;
+        float dalt = desired_alt - target_altitude_mm;
+        float alt_step_max = ALT_HOLD_CLIMB_RATE_MAX * CONTROL_LOOP_DT;
+        if (dalt > alt_step_max) dalt = alt_step_max;
+        else if (dalt < -alt_step_max) dalt = -alt_step_max;
+        target_altitude_mm += dalt;
 
         // Внутренний контур ANGLE (1000 Гц)
         error_pitch_angle = target_angle_pitch_mtf - pitch;

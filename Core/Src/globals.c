@@ -18,6 +18,8 @@ PID_2_Controller yaw_pid_rate;
 
 float target_altitude_mm = 0.0f;
 float hover_throttle_base = 0.0f;
+float alt_hold_capture_pot = 0.0f;
+float alt_hold_capture_alt_mm = 0.0f;
 float final_throttle = 0;
 
 PID_Controller position_pid_x;

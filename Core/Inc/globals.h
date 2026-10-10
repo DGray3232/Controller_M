@@ -34,6 +34,8 @@ extern float target_altitude_mm;
 extern float hover_throttle_base;
 extern float final_throttle;
 extern float smooth_altitude_mm;
+extern float alt_hold_capture_pot;    // значение крестовины (pot) при входе в ALT_HOLD
+extern float alt_hold_capture_alt_mm; // высота при входе в ALT_HOLD (база целевой высоты)
 
 extern PID_Controller position_pid_x;
 extern PID_Controller position_pid_y;
