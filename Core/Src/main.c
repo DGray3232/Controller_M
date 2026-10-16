@@ -997,23 +997,23 @@ void run_control_loop(){
 
 	   pid_correction_1 = forse_roll_rate + forse_pitch_rate + forse_yaw_rate;
 	   pid_correction_1 = constrain_float(pid_correction_1, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   total_power_1 = final_throttle + pid_correction_1;
-	   total_power_1 = constrain(trim_percent(total_power_1, TRIM_PERCENT_FRONT_LEFT),MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	   total_power_1 = trim_percent(final_throttle, TRIM_PERCENT_FRONT_LEFT) + pid_correction_1;
+	   total_power_1 = constrain(total_power_1, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
 	   pid_correction_2 = -forse_roll_rate + forse_pitch_rate - forse_yaw_rate;
 	   pid_correction_2 = constrain_float(pid_correction_2, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   total_power_2 = final_throttle + pid_correction_2;
-	   total_power_2 = constrain(trim_percent(total_power_2, TRIM_PERCENT_FRONT_RIGHT),MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	   total_power_2 = trim_percent(final_throttle, TRIM_PERCENT_FRONT_RIGHT) + pid_correction_2;
+	   total_power_2 = constrain(total_power_2, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
 	   pid_correction_3 = forse_roll_rate - forse_pitch_rate - forse_yaw_rate;
 	   pid_correction_3 = constrain_float(pid_correction_3, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   total_power_3 = final_throttle + pid_correction_3;
-	   total_power_3 = constrain(trim_percent(total_power_3, TRIM_PERCENT_REAR_LEFT),MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	   total_power_3 = trim_percent(final_throttle, TRIM_PERCENT_REAR_LEFT) + pid_correction_3;
+	   total_power_3 = constrain(total_power_3, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
 	   pid_correction_4 = -forse_roll_rate - forse_pitch_rate + forse_yaw_rate;
 	   pid_correction_4 = constrain_float(pid_correction_4, -max_pid_correction_mshot, max_pid_correction_mshot);
-	   total_power_4 = final_throttle + pid_correction_4;
-	   total_power_4 = constrain(trim_percent(total_power_4, TRIM_PERCENT_REAR_RIGHT),MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	   total_power_4 = trim_percent(final_throttle, TRIM_PERCENT_REAR_RIGHT) + pid_correction_4;
+	   total_power_4 = constrain(total_power_4, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
        // Применяем экспонинциального сглаживания к каждому сигналу мотора
        filtered_power_1 = MOTOR_OUTPUT_FILTER_ALPHA * (int)total_power_1 + (1.0f - MOTOR_OUTPUT_FILTER_ALPHA) * filtered_power_1;

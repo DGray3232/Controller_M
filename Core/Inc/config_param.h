@@ -70,10 +70,10 @@
 #define MAX_P                 150
 
 /* --- Триммирование (процентов) --- */
-#define TRIM_PERCENT_FRONT_LEFT   5  // 0
-#define TRIM_PERCENT_FRONT_RIGHT  5  // -1
-#define TRIM_PERCENT_REAR_LEFT    0  // 5
-#define TRIM_PERCENT_REAR_RIGHT   0  // 0
+#define TRIM_PERCENT_FRONT_LEFT   3  // подъём спереди (компенсация статического перекоса вперёд)
+#define TRIM_PERCENT_FRONT_RIGHT  3
+#define TRIM_PERCENT_REAR_LEFT    0
+#define TRIM_PERCENT_REAR_RIGHT   0
 
 /* --- Режимы полета --- */
 #define FLIGHT_MODE_ANGLE 0
@@ -101,10 +101,10 @@
 #define SCALE_FACTOR_DoM          1.0
 
 #define PITCH_PID_KP_RATE_DoM     3.0
-#define PITCH_PID_KI_RATE_DoM     0.1
+#define PITCH_PID_KI_RATE_DoM     0.3
 #define PITCH_PID_KD_RATE_DoM     0.05 
 #define ROLL_PID_KP_RATE_DoM      3.0
-#define ROLL_PID_KI_RATE_DoM      0.1
+#define ROLL_PID_KI_RATE_DoM      0.3
 #define ROLL_PID_KD_RATE_DoM      0.05 
 #define YAW_PID_KP_RATE_DoM       7.0
 #define YAW_PID_KI_RATE_DoM       0.4
@@ -147,11 +147,11 @@
 #define ALT_HOLD_POT_TO_MM        10.0f   // [мм/тик] смещение целевой высоты на 1 тик крестовины (pot, 0..1000)
 #define ALT_HOLD_CLIMB_RATE_MAX   200.0f  // [мм/с] предел вертикальной скорости изменения целевой высоты (плавный взлёт/посадка)
 #define ALT_HOLD_TAKEOFF_ALTITUDE 700.0f  // [мм] высота, на которую дрон взлетает с земли при входе в ALT_HOLD
-#define ALT_HOLD_TAKEOFF_THROTTLE 720.0f  // [тик] база тяги при взлёте с земли (подобрать ≈ чуть ниже тяги висения)
-#define ALT_HOLD_POS_HOLD_MIN_ALTITUDE 300.0f  // [мм] ниже этой высоты позиционный контур выключен (вертикальный взлёт)
+#define ALT_HOLD_TAKEOFF_THROTTLE 800.0f  // [тик] база тяги при взлёте с земли (подобрать ≈ чуть ниже тяги висения)
+#define ALT_HOLD_POS_HOLD_MIN_ALTITUDE 150.0f  // [мм] ниже этой высоты позиционный контур выключен (вертикальный взлёт)
 
 /* --- ПИД позиции (удержание точки, частота зависит от USE_EKF3) --- */
-#define POSITION_PID_KP           0.5f  // [см/с на см] P-коэфф позиции: целевая скорость на 1 см ошибки. Больше — резче возврат в точку.
+#define POSITION_PID_KP           1.0f  // [см/с на см] P-коэфф позиции: целевая скорость на 1 см ошибки. Больше — резче возврат в точку.
 #define POSITION_PID_KI           0.06f  // [1/с] I-коэфф позиции: компенсирует постоянное снесение (дрейф).
 #if USE_EKF3
 #define POSITION_PID_KD           0.0f   // EKF3 (1 кГц): D даёт дребезг — выключен.
@@ -159,6 +159,6 @@
 #define POSITION_PID_KD           0.01f  // Старая схема (50 Гц): лёгкое демпфирование.
 #endif
 #define POSITION_INTEGRAL_LIMIT   20.0f // [см/с] Предел накопления интеграла позиции (анти-виндап).
-#define POSITION_MAX_SPEED        40.0f // [см/с] Ограничение целевой горизонтальной скорости из позиционного ПИД и от стика.
+#define POSITION_MAX_SPEED        60.0f // [см/с] Ограничение целевой горизонтальной скорости из позиционного ПИД и от стика.
 
 #endif /* CONFIG_PARAM_H */
