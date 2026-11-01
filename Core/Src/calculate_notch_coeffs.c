@@ -45,8 +45,8 @@ void calculateNotchFilterCoeffs(float sampleRate, float centerFreq, float bandwi
     temp_coeffs[0] = b0 / a0;      // b0
     temp_coeffs[1] = b1 / a0;      // b1
     temp_coeffs[2] = b2 / a0;      // b2
-    temp_coeffs[3] = -a1 / a0;     // a1 (с обратным знаком для CMSIS)
-    temp_coeffs[4] = -a2 / a0;     // a2 (с обратным знаком для CMSIS)
+    temp_coeffs[3] = -a1 / a0;     // a1 (обратный знак для CMSIS df2T: знаменатель 1 - a1 z^-1 - a2 z^-2)
+    temp_coeffs[4] = -a2 / a0;     // a2
     // Копируем коэффициенты для второй стадии
     for (int i = 0; i < 5; i++) {
     	temp_coeffs[5 + i] = temp_coeffs[i];

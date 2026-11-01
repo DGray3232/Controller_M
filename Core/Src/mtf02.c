@@ -51,8 +51,11 @@ void micolink_decode(uint8_t data,
             *distance_precision = payload.precision;
             *distance_status = payload.dis_status;
             // Извлечение данных оптического потока
-            *flow_velocity_x = payload.flow_vel_x;
-            *flow_velocity_y = payload.flow_vel_y;
+            // Оси датчика MTF-02 повёрнуты на 90° и ось Y инвертирована:
+            // flow_vel_x = боковое движение (вправо = +), flow_vel_y = продольное (вперёд = -).
+            // Приводим к осям дрона: X = вперёд (+), Y = вправо (+).
+            *flow_velocity_x = -payload.flow_vel_y;
+            *flow_velocity_y =  payload.flow_vel_x;
             *flow_quality = payload.flow_quality;
             *flow_status = payload.flow_status;
             // Помечаем, что получен полный кадр с данными потока

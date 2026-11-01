@@ -35,6 +35,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include <stdlib.h>
 #include "calculate_notch_coeffs.h"
 #include "vibration_analysis.h"
 #include "optical_flow_compensation.h"
@@ -103,7 +104,7 @@ void update_coeff() {
     		 calculateNotchFilterCoeffs(1000, 0, 5, Coeffs_notch_x, 1.0);
     	 }
     	 if (fabs(vibration_frequency_x - previous_freq_x) > FREQ_HYSTERESIS) {
-    	     calculateNotchFilterCoeffs(1000, vibration_frequency_x, 5, Coeffs_notch_x, 0.9f);
+    	     calculateNotchFilterCoeffs(1000, vibration_frequency_x, 25, Coeffs_notch_x, 0.9f);
     	     previous_freq_x = vibration_frequency_x;
     	     memset(filterState_Gx_notch, 0, sizeof(filterState_Gx_notch));
     	     memset(filterState_Ax_notch, 0, sizeof(filterState_Ax_notch));
@@ -115,7 +116,7 @@ void update_coeff() {
    		 calculateNotchFilterCoeffs(1000, 0, 5, Coeffs_notch_y, 1.0);
    	 }
 	 if (fabs(vibration_frequency_y - previous_freq_y) > FREQ_HYSTERESIS) {
-	     calculateNotchFilterCoeffs(1000, vibration_frequency_y, 5, Coeffs_notch_y, 0.9f);
+	     calculateNotchFilterCoeffs(1000, vibration_frequency_y, 25, Coeffs_notch_y, 0.9f);
 	     previous_freq_y = vibration_frequency_y;
 	     memset(filterState_Gy_notch, 0, sizeof(filterState_Gy_notch));
 	     memset(filterState_Ay_notch, 0, sizeof(filterState_Ay_notch));
@@ -127,7 +128,7 @@ void update_coeff() {
       		 calculateNotchFilterCoeffs(1000, 0, 5, Coeffs_notch_z, 1.0);
       	 }
     	 if (fabs(vibration_frequency_z - previous_freq_z) > FREQ_HYSTERESIS) {
-    	     calculateNotchFilterCoeffs(1000, vibration_frequency_z, 5, Coeffs_notch_z, 0.9f);
+    	     calculateNotchFilterCoeffs(1000, vibration_frequency_z, 25, Coeffs_notch_z, 0.9f);
     	     previous_freq_z = vibration_frequency_z;
     	     memset(filterState_Gz_notch, 0, sizeof(filterState_Gz_notch));
     	     memset(filterState_Az_notch, 0, sizeof(filterState_Az_notch));
@@ -302,7 +303,6 @@ void get_filter_data_accel() {
 	arm_biquad_cascade_df2T_f32 (&hpf_Ax, Ax_for_fft, filter_hpf_Ax_for_fft, BLOCK_SIZE);
 	arm_biquad_cascade_df2T_f32 (&lpf_Ax, filter_hpf_Ax_for_fft, filter_lpf_Ax_for_fft, BLOCK_SIZE);
 	filter_Ax_for_fft = filter_lpf_Ax_for_fft[0];
-	add_to_x(filter_Ax_for_fft);
 
 	Ax[0] = median_filter(Ax[0], &Accel_x);
     arm_biquad_cascade_df2T_f32 (&imu_Ax_notch, Ax, filter_Ax_notch, BLOCK_SIZE);
@@ -320,7 +320,6 @@ void get_filter_data_accel() {
 	arm_biquad_cascade_df2T_f32 (&hpf_Ay, Ay_for_fft, filter_hpf_Ay_for_fft, BLOCK_SIZE);
 	arm_biquad_cascade_df2T_f32 (&lpf_Ay, filter_hpf_Ay_for_fft, filter_lpf_Ay_for_fft, BLOCK_SIZE);
 	filter_Ay_for_fft = filter_lpf_Ay_for_fft[0];
-	add_to_y(filter_Ay_for_fft);
 
 	Ay[0] = median_filter(Ay[0], &Accel_y);
     arm_biquad_cascade_df2T_f32 (&imu_Ay_notch, Ay, filter_Ay_notch, BLOCK_SIZE);
@@ -338,7 +337,6 @@ void get_filter_data_accel() {
 	arm_biquad_cascade_df2T_f32 (&hpf_Az, Az_for_fft, filter_hpf_Az_for_fft, BLOCK_SIZE);
 	arm_biquad_cascade_df2T_f32 (&lpf_Az, filter_hpf_Az_for_fft, filter_lpf_Az_for_fft, BLOCK_SIZE);
 	filter_Az_for_fft = filter_lpf_Az_for_fft[0];
-	add_to_z(filter_Az_for_fft);
 
 	Az[0] = median_filter(Az[0], &Accel_z);
     arm_biquad_cascade_df2T_f32 (&imu_Az_notch, Az, filter_Az_notch, BLOCK_SIZE);
@@ -355,6 +353,7 @@ void get_filter_data_gyro() {
 
 	Gx[0] = imu_gx;
 	Gx[0] = Gx[0] - bias_Gx;
+	add_to_x(Gx[0]);
 
 	arm_biquad_cascade_df2T_f32 (&imu_Gx_D_lpf, Gx, filter_Gx_D_lpf, BLOCK_SIZE);
 	filtered_Gx_D = filter_Gx_D_lpf[0];
@@ -370,6 +369,7 @@ void get_filter_data_gyro() {
 
     Gy[0] = imu_gy;
 	Gy[0] = Gy[0] - bias_Gy;
+	add_to_y(Gy[0]);
 
 	arm_biquad_cascade_df2T_f32 (&imu_Gy_D_lpf, Gy, filter_Gy_D_lpf, BLOCK_SIZE);
 	filtered_Gy_D = filter_Gy_D_lpf[0];
@@ -385,6 +385,7 @@ void get_filter_data_gyro() {
 
   	Gz[0] = imu_gz;
     Gz[0] = Gz[0] - bias_Gz;
+    add_to_z(Gz[0]);
 
 	arm_biquad_cascade_df2T_f32 (&imu_Gz_D_lpf, Gz, filter_Gz_D_lpf, BLOCK_SIZE);
 	filtered_Gz_D = filter_Gz_D_lpf[0];
@@ -448,8 +449,13 @@ void IMU_Init(void) {
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+static int cmp_float(const void *a, const void *b) {
+    float fa = *(const float*)a, fb = *(const float*)b;
+    return (fa > fb) - (fa < fb);
+}
+
 void bias() {
-    float sum_gx = 0, sum_gy = 0, sum_gz = 0;
+    static float gx_buf[BIAS_OFSET], gy_buf[BIAS_OFSET], gz_buf[BIAS_OFSET];
     float sum_ax = 0, sum_ay = 0, sum_az = 0;
     int valid_samples = 0;
 
@@ -457,10 +463,10 @@ void bias() {
         // Читаем свежие данные IMU перед каждым сэмплом
         ICM42688_ReadAll(&hspi2);
 
-        // Гироскоп из глобальных переменных IMU
-        sum_gx += median_filter(imu_gx, &Gyro_x_bias);
-        sum_gy += median_filter(imu_gy, &Gyro_y_bias);
-        sum_gz += median_filter(imu_gz, &Gyro_z_bias);
+        // Гироскоп из глобальных переменных IMU (медианный фильтр убирает одиночные выбросы)
+        gx_buf[i] = median_filter(imu_gx, &Gyro_x_bias);
+        gy_buf[i] = median_filter(imu_gy, &Gyro_y_bias);
+        gz_buf[i] = median_filter(imu_gz, &Gyro_z_bias);
 
         // Акселерометр из глобальных переменных IMU
         float ax = median_filter(imu_ax, &Accel_x_ofset);
@@ -477,25 +483,24 @@ void bias() {
         HAL_Delay(1);
     }
 
-    // Усреднение гироскопа — всегда
-    bias_Gx = sum_gx / BIAS_OFSET;
-    bias_Gy = sum_gy / BIAS_OFSET;
-    bias_Gz = sum_gz / BIAS_OFSET;
+    // Медиана гиро — устойчива к выбросам (движение дрона, одиночные скачки),
+    // в отличие от среднего арифметического.
+    qsort(gx_buf, BIAS_OFSET, sizeof(float), cmp_float);
+    qsort(gy_buf, BIAS_OFSET, sizeof(float), cmp_float);
+    qsort(gz_buf, BIAS_OFSET, sizeof(float), cmp_float);
+    bias_Gx = gx_buf[BIAS_OFSET/2];
+    bias_Gy = gy_buf[BIAS_OFSET/2];
+    bias_Gz = gz_buf[BIAS_OFSET/2];
 
     // Усреднение акселерометра — только если достаточно валидных сэмплов
     if (valid_samples > BIAS_OFSET / 2) {
-        offset_Ax = sum_ax / valid_samples;
-        offset_Ay = sum_ay / valid_samples;
+        // Калибруем только масштаб гравитации по Z. X/Y НЕ калибруем: наклон
+        // стартовой площадки не должен попадать в offset, иначе дрон держит
+        // наклон поверхности как горизонталь и его сносит. Дрон увидит реальный
+        // наклон и angle-контур выровняет его в полёте.
+        offset_Ax = 0.0f;
+        offset_Ay = 0.0f;
         offset_Az = (sum_az / valid_samples) - 1.0f;  // вычитаем 1g
-
-        // Проверка: дрон должен стоять достаточно ровно (X и Y ~ 0)
-        // Если offset_Ax или offset_Ay > 0.1g — значит дрон наклонён,
-        // и калибровка акселерометра будет неверной.
-        if (fabsf(offset_Ax) > 0.25f || fabsf(offset_Ay) > 0.25f) {
-            offset_Ax = 0.0f;
-            offset_Ay = 0.0f;
-            offset_Az = 0.0f;
-        }
     } else {
         // Слишком много отбракованных сэмплов — не калибруем акселерометр
         offset_Ax = 0.0f;
@@ -560,16 +565,18 @@ void run_control_loop(){
     // ложный «взлёт» и сброс EKF в полёте.
     uint8_t grounded = (grounded_cycles >= MTF_GROUND_DEBOUNCE_CYCLES);
 
-    // Взлёт (был на земле -> поднялся выше порога): обнуляем EKF и позицию.
-    // Иначе дрейф, накопленный на земле (random-walk скорости без коррекции
-    // потока), даёт многометровую ложную ошибку позиции, и позиционный контур
-    // уходит в насыщение, уводя дрон в сторону от точки.
+    // Взлёт (был на земле -> поднялся выше порога): обнуляем EKF (скорость/позицию),
+    // чтобы дрейф, накопленный на земле, не дал ложную скорость при взлёте.
     if (prev_grounded && !grounded) {
         ekf3_reset(&ekf3);
-        pos_x = 0.0f; pos_y = 0.0f;
-        target_pos_x = 0.0f; target_pos_y = 0.0f;
-        PID_Reset(&position_pid_x);
-        PID_Reset(&position_pid_y);
+        // На земле angle-контур копил интеграл против наклона площадки (дрон стоял
+        // на ножках и не мог выровняться). При отрыве этот момент «выстреливает»
+        // наклоном и сносом — обнуляем интегралы, выравнивание произойдёт в воздухе.
+        PID_DoM_Reset(&pitch_pid_angle_DoM);
+        PID_DoM_Reset(&roll_pid_angle_DoM);
+        PID_DoM_Reset(&pitch_pid_rate_DoM);
+        PID_DoM_Reset(&roll_pid_rate_DoM);
+        PID_DoM_Reset(&yaw_pid_rate_DoM);
     }
     prev_grounded = grounded;
 
@@ -577,8 +584,15 @@ void run_control_loop(){
     // На земле predict не вызываем: random-walk скорости копит дрейф позиции,
     // который потоком уже не обнулить (поток мерит скорость, а не позицию).
     if (!grounded) {
+        // Компенсация g·sin(наклон) ДО EKF: акселерометр в body-фрейме видит
+        // проекцию гравитации на горизонтальные оси (g_body_x = -sin(pitch),
+        // g_body_y = -sin(roll) в соглашении кватерниона Mahony). Вычитаем её,
+        // чтобы EKF не интегрировал наклон в ложную горизонтальную скорость
+        // (g·sin-протечка: Mahony наклоняется от вибраций → g протекает в EKF).
+        float ax_comp = filtered_Ax + sinf(pitch * DEG_TO_RAD);
+        float ay_comp = filtered_Ay + sinf(roll * DEG_TO_RAD);
         ekf3_predict(&ekf3,
-                     filtered_Ax * 9.81f, filtered_Ay * 9.81f, filtered_Az * 9.81f,
+                     ax_comp * 9.81f, ay_comp * 9.81f, filtered_Az * 9.81f,
                      Quat_actual, CONTROL_LOOP_DT);
     }
 
@@ -614,13 +628,8 @@ void run_control_loop(){
 	actual_velocity_yaw_D = filtered_Gz_D;
     // Режим уже определён выше: ACRO/ANGLE по Circle, MTF по тумблеру Triangle
 
-    // Вошли в MTF: захват позиции (только горизонталь)
+    // Вошли в MTF: сбрасываем EKF (скорость стартует с нуля).
     if (active_mode == FLIGHT_MODE_MTF && prev_active_mode != FLIGHT_MODE_MTF) {
-        target_pos_x = 0.0f; target_pos_y = 0.0f;
-        pos_x = 0.0f; pos_y = 0.0f;
-        position_hold_active = true;
-        PID_Reset(&position_pid_x);
-        PID_Reset(&position_pid_y);
         ekf3_reset(&ekf3);
     }
     // Вошли в ALT_HOLD: захват текущей высоты, базовой тяги и фиксация точки
@@ -638,23 +647,17 @@ void run_control_loop(){
         }
         target_altitude_mm = (float)distance;
         smooth_altitude_mm = (float)distance;
+        // Сброс PID высоты на входе в ALT_HOLD; засекаем текущую высоту (без выброса D)
+        PID_DoM_Reset(&altitude_pid);
+        altitude_pid.previous_measurement = smooth_altitude_mm;
+        altitude_control = 0.0f;
         // Захват крестовины: дальше целевая высота смещается от pot (D-pad вверх/вниз)
         alt_hold_capture_pot = (float)potentiometer_value;
-        target_pos_x = pos_x;
-        target_pos_y = pos_y;
-        position_hold_active = true;
-        PID_Reset(&position_pid_x);
-        PID_Reset(&position_pid_y);
+        yaw_capture = yaw;   // запоминаем курс для yaw-удержания
         ekf3_reset(&ekf3);
     }
     prev_active_mode = active_mode;
 
-    // Сброс удержания вне MTF/ALT_HOLD
-    if (active_mode != FLIGHT_MODE_MTF && active_mode != FLIGHT_MODE_ALT_HOLD) {
-        position_hold_active = false;
-        PID_Reset(&position_pid_x);
-        PID_Reset(&position_pid_y);
-    }
 	// Вычисляем target_velocity на основе активного режима
     switch(active_mode) {
 	    case FLIGHT_MODE_MTF: {
@@ -667,104 +670,44 @@ void run_control_loop(){
 	        // target_angle_pitch/roll_mtf объявлены в globals.c
 
 #if USE_EKF3
-        // EKF3: позиция и скорость предсказываются на 1 кГц (ekf3_predict),
-        // коррекция по потоку идёт асинхронно на частоте кадра (~50 Гц).
-        // Поэтому позиционный контур работает на 1 кГц и не ждёт кадр датчика.
-        pos_x = ekf3.pos_earth_m[0] * 100.0f;
-        pos_y = ekf3.pos_earth_m[1] * 100.0f;
+        // Вариант A: скоростное удержание (без возврата в точку).
+        // Стик в центре → целевая скорость 0 → контур гасит скорость, дрон висит
+        // на месте. Стик отклонён → целевая скорость = стик. Позиционный ПИД
+        // отключён: позиция ненаблюдаема (поток меряет только скорость, GPS нет),
+        // и дрейф скорости превращался в ложную цель, насыщавшую контур (15°) и
+        // реально разгонявшую дрон.
         float meas_speed_x = ekf3.vel_body_cms[0];
         float meas_speed_y = ekf3.vel_body_cms[1];
+        float target_speed_x = stick_speed_x;   // стик — уже связанная СК (body)
+        float target_speed_y = stick_speed_y;
 
-        // Матрица доворота земной скорости в связанную СК (R^T, элементы как в
-        // ekf3.c quat_to_dcm). Нужна, чтобы целевая скорость из позиционного ПИД
-        // (земная СК) сравнивалась с vel_body_cms (связанная СК) в одном фрейме.
-        float q0 = Quat_actual[0], q1 = Quat_actual[1], q2 = Quat_actual[2], q3 = Quat_actual[3];
-        float R00 = 1.0f - 2.0f*(q2*q2 + q3*q3);
-        float R01 = 2.0f*(q1*q2 + q0*q3);
-        float R10 = 2.0f*(q1*q2 - q0*q3);
-        float R11 = 1.0f - 2.0f*(q1*q1 + q3*q3);
-
-        // Целевая скорость (как DJI/Betaflight-hold):
-        //   стик в центре → позиционный ПИД держит точку
-        //   стик отклонён → точка смещается за дроном, скорость задаёт стик
-        float target_speed_x, target_speed_y;
-        bool stick_moving = (fabsf(stick_norm_x) > 0.001f) || (fabsf(stick_norm_y) > 0.001f);
-
-        if (position_hold_active) {
-            if (stick_moving) {
-                // смещаем точку удержания к текущей позиции, чтобы не тянуло назад
-                target_pos_x = pos_x;
-                target_pos_y = pos_y;
-                PID_Reset(&position_pid_x);
-                PID_Reset(&position_pid_y);
-                target_speed_x = stick_speed_x;   // стик — уже связанная СК
-                target_speed_y = stick_speed_y;
-            } else {
-                // Позиционный ПИД выдаёт скорость в ЗЕМНОЙ СК (NED) — доворачиваем
-                // в связанную СК, чтобы вычесть из vel_body_cms в одном фрейме.
-                float ts_n = PID_Compute(&position_pid_x, target_pos_x - pos_x, CONTROL_LOOP_DT);
-                float ts_e = PID_Compute(&position_pid_y, target_pos_y - pos_y, CONTROL_LOOP_DT);
-                target_speed_x = R00*ts_n + R01*ts_e;   // body X
-                target_speed_y = R10*ts_n + R11*ts_e;   // body Y
-            }
-            target_speed_x = constrain_float(target_speed_x, -POSITION_MAX_SPEED, POSITION_MAX_SPEED);
-            target_speed_y = constrain_float(target_speed_y, -POSITION_MAX_SPEED, POSITION_MAX_SPEED);
-        } else {
-            target_speed_x = stick_speed_x;   // стик — связанная СК
-            target_speed_y = stick_speed_y;
-        }
-
-        error_pitch_mtf = target_speed_y - meas_speed_y;
-        error_roll_mtf  = target_speed_x - meas_speed_x;
+        // Ошибки скорости: продольная (X) → наклон pitch, боковая (Y) → наклон roll.
+        // (Было перепутано: pitch управлялся боковой скоростью, roll — продольной,
+        //  из-за чего контур наклонял дрон в неверной плоскости и не гасил скорость.)
+        error_pitch_mtf = meas_speed_x - target_speed_x;
+        error_roll_mtf  = target_speed_y - meas_speed_y;
 
             // ПИД скорости вычисляет ТРЕБУЕМЫЙ УГОЛ НАКЛОНА (в градусах) — 1 кГц
-            target_angle_pitch_mtf = PID_DoM_Compute(&pitch_pid_mtf_DoM, error_pitch_mtf, meas_speed_y, CONTROL_LOOP_DT);
-            target_angle_roll_mtf = PID_DoM_Compute(&roll_pid_mtf_DoM, error_roll_mtf, meas_speed_x, CONTROL_LOOP_DT);
+            target_angle_pitch_mtf = PID_DoM_Compute(&pitch_pid_mtf_DoM, error_pitch_mtf, meas_speed_x, CONTROL_LOOP_DT);
+            target_angle_roll_mtf = PID_DoM_Compute(&roll_pid_mtf_DoM, error_roll_mtf, meas_speed_y, CONTROL_LOOP_DT);
 
-            // D-член от акселерометра (горизонтальное ускорение, без интеграции) — демпфирование
-            target_angle_roll_mtf  -= MTF_D_KD * (filtered_Ax * 9.81f - MTF_D_ACC_SIGN_X * 9.81f * sinf(roll  * DEG_TO_RAD)) * 100.0f;
-            target_angle_pitch_mtf -= MTF_D_KD * (filtered_Ay * 9.81f - MTF_D_ACC_SIGN_Y * 9.81f * sinf(pitch * DEG_TO_RAD)) * 100.0f;
+            // D-член от акселерометра (горизонтальное ускорение) — демпфирование (оси: roll←Ay, pitch←Ax).
+            target_angle_roll_mtf  += MTF_D_KD * (filtered_Ay * 9.81f - MTF_D_ACC_SIGN_Y * 9.81f * sinf(roll  * DEG_TO_RAD)) * 100.0f;
+            target_angle_pitch_mtf += MTF_D_KD * (filtered_Ax * 9.81f - MTF_D_ACC_SIGN_X * 9.81f * sinf(pitch * DEG_TO_RAD)) * 100.0f;
 #else
-        // Старая схема: контур жёстко привязан к кадру потока (~50 Гц)
+        // Старая схема: горизонталь привязана к кадру потока (~50 Гц), скоростное удержание.
         if (optical_flow_results.new_optical_data_available) {
-            // Интегрируем скорость потока в позицию (50 Гц, dt = 0.02 с)
-            pos_x += optical_flow_results.speed_cm_s_x * 0.020f;
-            pos_y += optical_flow_results.speed_cm_s_y * 0.020f;
             float meas_speed_x = optical_flow_results.speed_cm_s_x;
             float meas_speed_y = optical_flow_results.speed_cm_s_y;
 
-            // Целевая скорость (как DJI/Betaflight-hold):
-            //   стик в центре → позиционный ПИД держит точку
-            //   стик отклонён → точка смещается за дроном, скорость задаёт стик
-            float target_speed_x, target_speed_y;
-            bool stick_moving = (fabsf(stick_norm_x) > 0.001f) || (fabsf(stick_norm_y) > 0.001f);
+            float target_speed_x = stick_speed_x;
+            float target_speed_y = stick_speed_y;
 
-            if (position_hold_active) {
-                if (stick_moving) {
-                    // смещаем точку удержания к текущей позиции, чтобы не тянуло назад
-                    target_pos_x = pos_x;
-                    target_pos_y = pos_y;
-                    PID_Reset(&position_pid_x);
-                    PID_Reset(&position_pid_y);
-                    target_speed_x = stick_speed_x;
-                    target_speed_y = stick_speed_y;
-                } else {
-                    target_speed_x = PID_Compute(&position_pid_x, target_pos_x - pos_x, 0.020f);
-                    target_speed_y = PID_Compute(&position_pid_y, target_pos_y - pos_y, 0.020f);
-                }
-                target_speed_x = constrain_float(target_speed_x, -POSITION_MAX_SPEED, POSITION_MAX_SPEED);
-                target_speed_y = constrain_float(target_speed_y, -POSITION_MAX_SPEED, POSITION_MAX_SPEED);
-            } else {
-                target_speed_x = stick_speed_x;
-                target_speed_y = stick_speed_y;
-            }
+        error_pitch_mtf = meas_speed_x - target_speed_x;
+        error_roll_mtf  = target_speed_y - meas_speed_y;
 
-            error_pitch_mtf = target_speed_y - meas_speed_y;
-            error_roll_mtf  = target_speed_x - meas_speed_x;
-
-	            // ПИД скорости вычисляет ТРЕБУЕМЫЙ УГОЛ НАКЛОНА (в градусах)
-	            target_angle_pitch_mtf = PID_DoM_Compute(&pitch_pid_mtf_DoM, error_pitch_mtf, meas_speed_y, 0.020f);
-	            target_angle_roll_mtf = PID_DoM_Compute(&roll_pid_mtf_DoM, error_roll_mtf, meas_speed_x, 0.020f);
+	            target_angle_pitch_mtf = PID_DoM_Compute(&pitch_pid_mtf_DoM, error_pitch_mtf, meas_speed_x, 0.020f);
+	            target_angle_roll_mtf = PID_DoM_Compute(&roll_pid_mtf_DoM, error_roll_mtf, meas_speed_y, 0.020f);
 
             optical_flow_results.new_optical_data_available = false;
         }
@@ -804,51 +747,35 @@ void run_control_loop(){
         // высота держится P-регулятором вокруг захваченной target_altitude_mm.
 
 #if USE_EKF3
-        // EKF3: позиция/скорость предсказываются на 1 кГц, коррекция по потоку ~50 Гц.
-        pos_x = ekf3.pos_earth_m[0] * 100.0f;
-        pos_y = ekf3.pos_earth_m[1] * 100.0f;
+        // Вариант A: удержание скорости (без возврата в точку). ALT_HOLD держит
+        // высоту, горизонталь — нулевую скорость. Позиция ненаблюдаема без GPS,
+        // поэтому позиционный ПИД убран: он превращал дрейф скорости в ложную цель.
         float meas_speed_x = ekf3.vel_body_cms[0];
         float meas_speed_y = ekf3.vel_body_cms[1];
+        float target_speed_x = 0.0f;
+        float target_speed_y = 0.0f;
 
-        float target_speed_x = PID_Compute(&position_pid_x, target_pos_x - pos_x, CONTROL_LOOP_DT);
-        float target_speed_y = PID_Compute(&position_pid_y, target_pos_y - pos_y, CONTROL_LOOP_DT);
-        target_speed_x = constrain_float(target_speed_x, -POSITION_MAX_SPEED, POSITION_MAX_SPEED);
-        target_speed_y = constrain_float(target_speed_y, -POSITION_MAX_SPEED, POSITION_MAX_SPEED);
+        // Ошибки скорости: продольная (X) → pitch, боковая (Y) → roll.
+        error_pitch_mtf = meas_speed_x - target_speed_x;
+        error_roll_mtf  = target_speed_y - meas_speed_y;
 
-        // Доворот земной целевой скорости в связанную СК (для сравнения с vel_body_cms)
-        float q0 = Quat_actual[0], q1 = Quat_actual[1], q2 = Quat_actual[2], q3 = Quat_actual[3];
-        float ts_n = target_speed_x;
-        float ts_e = target_speed_y;
-        target_speed_x = (1.0f - 2.0f*(q2*q2 + q3*q3))*ts_n + (2.0f*(q1*q2 + q0*q3))*ts_e;
-        target_speed_y = (2.0f*(q1*q2 - q0*q3))*ts_n + (1.0f - 2.0f*(q1*q1 + q3*q3))*ts_e;
+        target_angle_pitch_mtf = PID_DoM_Compute(&pitch_pid_mtf_DoM, error_pitch_mtf, meas_speed_x, CONTROL_LOOP_DT);
+        target_angle_roll_mtf = PID_DoM_Compute(&roll_pid_mtf_DoM, error_roll_mtf, meas_speed_y, CONTROL_LOOP_DT);
 
-        error_pitch_mtf = target_speed_y - meas_speed_y;
-        error_roll_mtf  = target_speed_x - meas_speed_x;
-
-        target_angle_pitch_mtf = PID_DoM_Compute(&pitch_pid_mtf_DoM, error_pitch_mtf, meas_speed_y, CONTROL_LOOP_DT);
-        target_angle_roll_mtf = PID_DoM_Compute(&roll_pid_mtf_DoM, error_roll_mtf, meas_speed_x, CONTROL_LOOP_DT);
-
-        // D-член от акселерометра (горизонтальное ускорение, без интеграции) — демпфирование
-        target_angle_roll_mtf  -= MTF_D_KD * (filtered_Ax * 9.81f - MTF_D_ACC_SIGN_X * 9.81f * sinf(roll  * DEG_TO_RAD)) * 100.0f;
-        target_angle_pitch_mtf -= MTF_D_KD * (filtered_Ay * 9.81f - MTF_D_ACC_SIGN_Y * 9.81f * sinf(pitch * DEG_TO_RAD)) * 100.0f;
+        // D-член от акселерометра (горизонтальное ускорение) — демпфирование (оси: roll←Ay, pitch←Ax).
+        target_angle_roll_mtf  += MTF_D_KD * (filtered_Ay * 9.81f - MTF_D_ACC_SIGN_Y * 9.81f * sinf(roll  * DEG_TO_RAD)) * 100.0f;
+        target_angle_pitch_mtf += MTF_D_KD * (filtered_Ax * 9.81f - MTF_D_ACC_SIGN_X * 9.81f * sinf(pitch * DEG_TO_RAD)) * 100.0f;
 #else
-        // Старая схема: горизонталь привязана к кадру потока (~50 Гц)
+        // Старая схема: горизонталь привязана к кадру потока (~50 Гц), удержание скорости.
         if (optical_flow_results.new_optical_data_available) {
-            pos_x += optical_flow_results.speed_cm_s_x * 0.020f;
-            pos_y += optical_flow_results.speed_cm_s_y * 0.020f;
             float meas_speed_x = optical_flow_results.speed_cm_s_x;
             float meas_speed_y = optical_flow_results.speed_cm_s_y;
 
-            float target_speed_x = PID_Compute(&position_pid_x, target_pos_x - pos_x, 0.020f);
-            float target_speed_y = PID_Compute(&position_pid_y, target_pos_y - pos_y, 0.020f);
-            target_speed_x = constrain_float(target_speed_x, -POSITION_MAX_SPEED, POSITION_MAX_SPEED);
-            target_speed_y = constrain_float(target_speed_y, -POSITION_MAX_SPEED, POSITION_MAX_SPEED);
+            error_pitch_mtf = meas_speed_x;
+            error_roll_mtf  = -meas_speed_y;
 
-            error_pitch_mtf = target_speed_y - meas_speed_y;
-            error_roll_mtf  = target_speed_x - meas_speed_x;
-
-            target_angle_pitch_mtf = PID_DoM_Compute(&pitch_pid_mtf_DoM, error_pitch_mtf, meas_speed_y, 0.020f);
-            target_angle_roll_mtf = PID_DoM_Compute(&roll_pid_mtf_DoM, error_roll_mtf, meas_speed_x, 0.020f);
+            target_angle_pitch_mtf = PID_DoM_Compute(&pitch_pid_mtf_DoM, error_pitch_mtf, meas_speed_x, 0.020f);
+            target_angle_roll_mtf = PID_DoM_Compute(&roll_pid_mtf_DoM, error_roll_mtf, meas_speed_y, 0.020f);
 
             optical_flow_results.new_optical_data_available = false;
         }
@@ -859,19 +786,34 @@ void run_control_loop(){
         target_angle_roll_mtf = constrain_float(target_angle_roll_mtf, -MAX_TILT_MTF, MAX_TILT_MTF);
 
         // Взлётная фаза: пока высота мала, держим дрон ровно (вертикальный взлёт).
-        // На малой высоте поток мусорный → позиционный контур даёт ложный наклон и заваливает дрон.
+        // На малой высоте поток мусорный → горизонтальный контур даёт ложный наклон и заваливает дрон.
+        static uint8_t pos_hold_was_disabled = 0;
         if (smooth_altitude_mm < ALT_HOLD_POS_HOLD_MIN_ALTITUDE) {
             target_angle_pitch_mtf = 0.0f;
             target_angle_roll_mtf = 0.0f;
-            PID_Reset(&position_pid_x);
-            PID_Reset(&position_pid_y);
+            pos_hold_was_disabled = 1;
+        } else if (pos_hold_was_disabled) {
+            // Контур только что включился (переход через порог высоты). За вертикальный
+            // взлёт EKF накопил дрейф скорости (bias аксела), и если не сбросить — контур
+            // «выстрелит» ложной скоростью и резко наклонит дрон. Сбрасываем скорость/позицию
+            // EKF (bias сохраняем) и интеграл скоростного PID.
+            ekf3_reset(&ekf3);
+            PID_DoM_Reset(&pitch_pid_mtf_DoM);
+            PID_DoM_Reset(&roll_pid_mtf_DoM);
+            pos_hold_was_disabled = 0;
         }
 
-        // Высота: сглаживание LiDAR (50 Гц по кадру — LiDAR в EKF горизонтали не входит)
+        // Высота: сглаживание LiDAR + PID высоты (на частоте кадра ~50 Гц)
         if (optical_flow_results.new_optical_data_available) {
             float raw_alt = (float)distance * cosf(pitch * DEG_TO_RAD) * cosf(roll * DEG_TO_RAD);
             smooth_altitude_mm = smooth_altitude_mm * 0.7f + raw_alt * 0.3f;
             optical_flow_results.new_optical_data_available = false;
+
+            // PID высоты (DoM): D от производной измерения = демпфирование вертикальной
+            // скорости; dt = фактический период кадра потока (~20 мс).
+            float alt_err = target_altitude_mm - smooth_altitude_mm;
+            altitude_control = PID_DoM_Compute(&altitude_pid, alt_err, smooth_altitude_mm,
+                                               OPTICAL_FLOW_UPDATE_PERIOD_MS * 0.001f);
         }
 
         // Крестовина (pot) плавно смещает целевую высоту с лимитом вертикальной скорости.
@@ -892,10 +834,15 @@ void run_control_loop(){
 
         target_velocity_pitch = PID_DoM_Compute(&pitch_pid_angle_DoM, error_pitch_angle, pitch, 0.001f);
         target_velocity_roll = PID_DoM_Compute(&roll_pid_angle_DoM, error_roll_angle, roll, 0.001f);
-        target_velocity_yaw = 0.0f;   // yaw тоже фиксируем (стики игнорируются)
+        // Yaw-удержание: P-регулятор по ошибке курса возвращает дрон к захваченному курсу.
+        float yaw_err = yaw_capture - yaw;
+        while (yaw_err > 180.0f) yaw_err -= 360.0f;
+        while (yaw_err < -180.0f) yaw_err += 360.0f;
+        target_velocity_yaw = YAW_HOLD_KP * yaw_err;
 
         target_velocity_pitch = safe_pid_value(target_velocity_pitch, MAX_P);
         target_velocity_roll = safe_pid_value(target_velocity_roll, MAX_P);
+        target_velocity_yaw = safe_pid_value(target_velocity_yaw, MAX_P);
 
         // Вычисляем ошибку для контура RATE
         error_pitch_rate = target_velocity_pitch - actual_velocity_pitch;
@@ -954,10 +901,9 @@ void run_control_loop(){
     // Итоговая тяга
     final_throttle = throttle_mshot;   // прямой газ (ACRO/ANGLE/MTF)
     if (active_mode == FLIGHT_MODE_ALT_HOLD) {
-        // Газ игнорируется — тягу задаёт P-регулятор высоты вокруг
+        // Газ игнорируется — тягу задаёт PID высоты (P+I+D) вокруг
         // захваченной базы тяги (мощность в момент включения удержания).
-        float alt_err = target_altitude_mm - smooth_altitude_mm;
-        final_throttle = hover_throttle_base + ALTITUDE_HOLD_GAIN_TICKS_PER_MM * alt_err;
+        final_throttle = hover_throttle_base + altitude_control;
     }
     final_throttle = constrain(final_throttle, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
@@ -1134,7 +1080,6 @@ int main(void)
   arm_biquad_cascade_df2T_init_f32(&hpf_Ay, NUM_STAGES_ACCEL_FFT, Coeffs_accel_hpf_fft, filterState_Ay_hpf_fft);
   arm_biquad_cascade_df2T_init_f32(&hpf_Az, NUM_STAGES_ACCEL_FFT, Coeffs_accel_hpf_fft, filterState_Az_hpf_fft);
 
-
   PID_DoM_Init(&pitch_pid_mtf_DoM, PITCH_PID_KP_MTF_DoM, PITCH_PID_KI_MTF_DoM, PITCH_PID_KD_MTF_DoM, ALPHA_MTF_DoM, ALPHA_DERIVATIVE_MTF_DoM, INTEGRAL_LIMIT_MTF_DoM, SCALE_FACTOR_MTF_DoM);
   PID_DoM_Init(&roll_pid_mtf_DoM, ROLL_PID_KP_MTF_DoM, ROLL_PID_KI_MTF_DoM, ROLL_PID_KD_MTF_DoM, ALPHA_MTF_DoM, ALPHA_DERIVATIVE_MTF_DoM, INTEGRAL_LIMIT_MTF_DoM, SCALE_FACTOR_MTF_DoM);
 
@@ -1150,13 +1095,17 @@ int main(void)
   PID_DoM_Init(&pitch_pid_angle_DoM, PITCH_PID_KP_DoM, PITCH_PID_KI_DoM, PITCH_PID_KD_DoM, ALPHA_DoM, ALPHA_DERIVATIVE_DoM, INTEGRAL_LIMIT_DoM, SCALE_FACTOR_DoM);
   PID_DoM_Init(&roll_pid_angle_DoM, ROLL_PID_KP_DoM, ROLL_PID_KI_DoM, ROLL_PID_KD_DoM, ALPHA_DoM, ALPHA_DERIVATIVE_DoM, INTEGRAL_LIMIT_DoM, SCALE_FACTOR_DoM);
 
-  // Позиционные ПИД-регуляторы (удержание точки по оптическому потоку)
-  PID_Init(&position_pid_x, POSITION_PID_KP, POSITION_PID_KI, POSITION_PID_KD, 1.0f, 1.0f, POSITION_INTEGRAL_LIMIT, 1.0f);
-  PID_Init(&position_pid_y, POSITION_PID_KP, POSITION_PID_KI, POSITION_PID_KD, 1.0f, 1.0f, POSITION_INTEGRAL_LIMIT, 1.0f);
+
+
+  // PID высоты (DoM): P+I+D, D от измерения (демпфирование вертикальной скорости)
+  PID_DoM_Init(&altitude_pid, ALTITUDE_HOLD_KP, ALTITUDE_HOLD_KI, ALTITUDE_HOLD_KD,
+               ALTITUDE_HOLD_ALPHA, ALTITUDE_HOLD_ALPHA_D, ALTITUDE_HOLD_INTEGRAL_LIMIT, ALTITUDE_HOLD_SCALE);
+  altitude_pid.output_limit = ALTITUDE_HOLD_MAX_OUTPUT;  // анти-виндап выхода PID высоты
   
-  // Термопрогрев IMU: читаем данные впустую ~2 секунды,
+  // Термопрогрев IMU: читаем данные впустую ~10 секунд,
   // пока гироскоп и акселерометр не стабилизируются после включения
-  for (int i = 0; i < 2000; i++) {
+  // (bias гиро плывёт ещё ~10-15 с после подачи питания — по полётным логам)
+  for (int i = 0; i < 10000; i++) {
        ICM42688_ReadAll(&hspi2);
        HAL_Delay(1);
   }
@@ -1206,19 +1155,61 @@ int main(void)
     //snprintf(buf, sizeof(buf),"pitch %f,roll %f,yaw %f,filter_Gx %f,filter_Gy %f,filter_Gz %f\n",pitch,roll,yaw,filtered_Gx,filtered_Gy,filtered_Gz);
 	//HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
 
+    // --- старый вывод (без температуры) закомментирован ---
+    
     snprintf(buf, sizeof(buf),
-        "t=%lu | fvX=%d fvY=%d | mtfX=%7.1f mtfY=%7.1f | rotX=%7.1f rotY=%7.1f | OLDx=%7.2f OLDy=%7.2f | Gx=%7.2f Gy=%7.2f | dist=%lu | q=%u | EKFx=%7.2f EKFy=%7.2f | innovX=%7.2f innovY=%7.2f\n",
+        "t=%lu | m1=%lu m2=%lu m3=%lu m4=%lu thr=%u | stk=%u %d %d %d | mode=%d altH=%u | "
+        "roll=%.1f pitch=%.1f yaw=%.1f | "
+        "imuA=%.2f %.2f %.2f | imuG=%.2f %.2f %.2f | "
+        "fA=%.2f %.2f %.2f | fG=%.2f %.2f %.2f | "
+        "dist=%lu str=%u | fvx=%d fvy=%d fq=%u | "
+        "EKFv=%.2f %.2f | innov=%.2f %.2f\n",
         (unsigned long)HAL_GetTick(),
-        flow_velocity_x, flow_velocity_y,
-        optical_flow_results.mtf_cm_s_x, optical_flow_results.mtf_cm_s_y,
-        optical_flow_results.rot_comp_cm_s_x, optical_flow_results.rot_comp_cm_s_y,
-        optical_flow_results.speed_cm_s_x, optical_flow_results.speed_cm_s_y,
-        filtered_Gx, filtered_Gy,
-        (unsigned long)distance,
-        (unsigned)flow_quality,
+        (unsigned long)m1_pulse[0], (unsigned long)m2_pulse[0],
+        (unsigned long)m3_pulse[0], (unsigned long)m4_pulse[0],
+        (unsigned)throttle_mshot,
+        (unsigned)potentiometer_value, joystick_x, joystick_y, right_left,
+        button_mode, (unsigned)button_alt_hold,
+        (double)roll, (double)pitch, (double)yaw,
+        (double)imu_ax, (double)imu_ay, (double)imu_az,
+        (double)imu_gx, (double)imu_gy, (double)imu_gz,
+        (double)filtered_Ax, (double)filtered_Ay, (double)filtered_Az,
+        (double)filtered_Gx, (double)filtered_Gy, (double)filtered_Gz,
+        (unsigned long)distance, (unsigned)distance_strength,
+        flow_velocity_x, flow_velocity_y, (unsigned)flow_quality,
+        ekf3.vel_body_cms[0], ekf3.vel_body_cms[1],
+        ekf3.innovation[0] * 100.0f, ekf3.innovation[1] * 100.0f);
+        HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+    
+/*
+    // Вывод для сбора зависимости bias(T): добавлено поле температуры кристалла T.
+    // Для полиномной компенсации нужны пары «T -> bias гиро» (в покое bias = imuG).
+    snprintf(buf, sizeof(buf),
+        "t=%lu | m1=%lu m2=%lu m3=%lu m4=%lu thr=%u | stk=%u %d %d %d | mode=%d altH=%u | "
+        "roll=%.1f pitch=%.1f yaw=%.1f | "
+        "imuA=%.2f %.2f %.2f | imuG=%.2f %.2f %.2f | T=%.2f | vibF=%.0f %.0f %.0f | "
+        "fA=%.2f %.2f %.2f | fG=%.2f %.2f %.2f | "
+        "dist=%lu str=%u | fvx=%d fvy=%d fq=%u | "
+        "EKFv=%.2f %.2f | innov=%.2f %.2f\n",
+        (unsigned long)HAL_GetTick(),
+        (unsigned long)m1_pulse[0], (unsigned long)m2_pulse[0],
+        (unsigned long)m3_pulse[0], (unsigned long)m4_pulse[0],
+        (unsigned)throttle_mshot,
+        (unsigned)potentiometer_value, joystick_x, joystick_y, right_left,
+        button_mode, (unsigned)button_alt_hold,
+        (double)roll, (double)pitch, (double)yaw,
+        (double)imu_ax, (double)imu_ay, (double)imu_az,
+        (double)imu_gx, (double)imu_gy, (double)imu_gz,
+        (double)imu_temp_degc,
+        (double)vibration_frequency_x, (double)vibration_frequency_y, (double)vibration_frequency_z,
+        (double)filtered_Ax, (double)filtered_Ay, (double)filtered_Az,
+        (double)filtered_Gx, (double)filtered_Gy, (double)filtered_Gz,
+        (unsigned long)distance, (unsigned)distance_strength,
+        flow_velocity_x, flow_velocity_y, (unsigned)flow_quality,
         ekf3.vel_body_cms[0], ekf3.vel_body_cms[1],
         ekf3.innovation[0] * 100.0f, ekf3.innovation[1] * 100.0f);
  	HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+    */
 /*
     // Отладочный вывод значений (раз в 100 мс)
     static uint32_t last_dbg_time = 0;

@@ -91,6 +91,12 @@ void ekf3_predict(EKF3_t *e, float ax, float ay, float az, const float q[4], flo
     e->x[PN] += e->x[VN] * dt;
     e->x[PE] += e->x[VE] * dt;
 
+    // Clamp позиции — страховка от неограниченного дрейфа (позиция ненаблюдаема без GPS).
+    if (e->x[PN] >  EKF3_POS_CLAMP) e->x[PN] =  EKF3_POS_CLAMP;
+    if (e->x[PN] < -EKF3_POS_CLAMP) e->x[PN] = -EKF3_POS_CLAMP;
+    if (e->x[PE] >  EKF3_POS_CLAMP) e->x[PE] =  EKF3_POS_CLAMP;
+    if (e->x[PE] < -EKF3_POS_CLAMP) e->x[PE] = -EKF3_POS_CLAMP;
+
     // Скорость интегрируется из ускорения за вычетом оценённого смещения.
     e->x[VN] += (a_n - e->x[ABN]) * dt;
     e->x[VE] += (a_e - e->x[ABE]) * dt;
@@ -168,9 +174,10 @@ void ekf3_update_flow(EKF3_t *e, int16_t flow_x, int16_t flow_y, float height_m,
     float v_flow_x = fvx * EKF3_FLOW_SIGN_X * height_m * 0.01f;
     float v_flow_y = fvy * EKF3_FLOW_SIGN_Y * height_m * 0.01f;
 
-    // Ложная скорость от вращения ω×h (gain откалиброван)
-    float v_rot_x = EKF3_ROT_SIGN_X * gx * height_m * EKF3_ROT_COMP_GAIN_X;
-    float v_rot_y = EKF3_ROT_SIGN_Y * gy * height_m * EKF3_ROT_COMP_GAIN_Y;
+    // Ложная скорость от вращения ω×h. Вращение вокруг X (roll) сносит камеру
+    // по Y (бок), вокруг Y (pitch) — по X (продольно), поэтому v_rot_x ← gy, v_rot_y ← gx.
+    float v_rot_x = EKF3_ROT_SIGN_X * gy * height_m * EKF3_ROT_COMP_GAIN_X;
+    float v_rot_y = EKF3_ROT_SIGN_Y * gx * height_m * EKF3_ROT_COMP_GAIN_Y;
 
     float v_body_x = v_flow_x - v_rot_x;
     float v_body_y = v_flow_y - v_rot_y;

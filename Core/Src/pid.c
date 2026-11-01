@@ -115,6 +115,7 @@ void PID_DoM_Init(PID_DoM_Controller *pid, float Kp, float Ki, float Kd, float a
     pid->previous_measurement = 0.0f;
     pid->previous_output = 0.0f;
     pid->previous_derivative = 0.0f;
+    pid->output_limit = 1e9f;   // по умолчанию без ограничения (анти-виндап выключен)
 }
 
 /**
@@ -162,6 +163,18 @@ float PID_DoM_Compute(PID_DoM_Controller *pid, float error, float measurement, f
     // 5. Ограничение и фильтрация выхода (как в ваших примерах)
     if (output > (float)INT_MAX) output = (float)INT_MAX;
     else if (output < -(float)INT_MAX) output = -(float)INT_MAX;
+    // 5a. Анти-виндап: ограничение выхода + обратный расчёт интеграла.
+    //     При насыщении укорачиваем интеграл на величину избытка, чтобы при
+    //     снятии насыщения (например, после взлёта) не было броска тяги.
+    float clamped_output = output;
+    if (clamped_output > pid->output_limit) clamped_output = pid->output_limit;
+    else if (clamped_output < -pid->output_limit) clamped_output = -pid->output_limit;
+    if (clamped_output != output && pid->Ki > 0.0f) {
+        pid->integral -= (output - clamped_output) / pid->Ki;
+        if (pid->integral > pid->integral_limit) pid->integral = pid->integral_limit;
+        else if (pid->integral < -pid->integral_limit) pid->integral = -pid->integral_limit;
+    }
+    output = clamped_output;
     float filtered_output = pid->alpha * output + (1.0f - pid->alpha) * pid->previous_output;
     if (isnan(filtered_output) || isinf(filtered_output)) {
         filtered_output = 0.0f;

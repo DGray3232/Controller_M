@@ -50,6 +50,7 @@ typedef struct {
     float previous_output;
     float previous_derivative;
     float scale_factor;
+    float output_limit;   // предел выхода (анти-виндап); 1e9 = без ограничения
 } PID_DoM_Controller;
 
 void PID_DoM_Init(PID_DoM_Controller *pid, float Kp, float Ki, float Kd, float alpha, float alpha_derivative, float integral_limit, float scale_factor);

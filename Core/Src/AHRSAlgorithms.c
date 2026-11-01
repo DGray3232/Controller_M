@@ -15,16 +15,13 @@
 
 // These are the free parameters in the Mahony filter and fusion scheme, Kp
 // for proportional feedback, Ki for integral
-#define Kp 2.0f * 5.0f
+#define Kp 2.0f * 0.5f
 #define Ki 0.005f
 
 #define PI 3.14159265358979323f
 #define RAD_TO_DEG 57.295779513082320876798154814105
 
-static float GyroMeasError = PI * (40.0f / 180.0f);
 
-// Vector to hold integral error for Mahony method
-static float eInt[3] = {0.0f, 0.0f, 0.0f};
 // Vector to hold quaternion
 static float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 
@@ -32,15 +29,10 @@ static float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 // Definitions
 
 // #define sampleFreq	512.0f			// sample frequency in Hz
-#define twoKpDef	(2.0f * 5.0f)	// 2 * proportional gain
-#define twoKiDef	(2.0f * 1.0f)	// 2 * integral gain
 
 //---------------------------------------------------------------------------------------------------
 // Variable definitions
 
-volatile float twoKp = twoKpDef;									// 2 * proportional gain (Kp)
-volatile float twoKi = twoKiDef;									// 2 * integral gain (Ki)
-volatile float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;		// quaternion of sensor frame relative to auxiliary frame
 volatile float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;	// integral error terms scaled by Ki
 
 static float invSqrt(float x) {

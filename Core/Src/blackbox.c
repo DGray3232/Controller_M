@@ -101,8 +101,8 @@ void Blackbox_Write(void) {
     // Газ
     s->throttle = throttle_mshot;
 
-    // Коррекция высоты (старый PID высоты удалён — здесь 0)
-    s->altitude_correction = 0;
+    // Коррекция высоты: выход PID высоты (altitude_control) [тик]
+    s->altitude_correction = safe_int16(altitude_control);
 
     // Режим и ARM (по фактическому состоянию моторов)
     s->flight_mode = active_mode;

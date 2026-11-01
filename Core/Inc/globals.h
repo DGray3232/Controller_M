@@ -34,16 +34,11 @@ extern float target_altitude_mm;
 extern float hover_throttle_base;
 extern float final_throttle;
 extern float smooth_altitude_mm;
+extern float altitude_control;          // выход PID высоты [тик]
 extern float alt_hold_capture_pot;    // значение крестовины (pot) при входе в ALT_HOLD
 extern float alt_hold_capture_alt_mm; // высота при входе в ALT_HOLD (база целевой высоты)
 
-extern PID_Controller position_pid_x;
-extern PID_Controller position_pid_y;
-extern float pos_x;
-extern float pos_y;
-extern float target_pos_x;
-extern float target_pos_y;
-extern bool position_hold_active;
+extern float yaw_capture;             // курс (yaw) при входе в ALT_HOLD — для yaw-удержания
 
 extern PID_DoM_Controller pitch_pid_rate_DoM;
 extern PID_DoM_Controller roll_pid_rate_DoM;
@@ -54,6 +49,8 @@ extern PID_DoM_Controller roll_pid_angle_DoM;
 
 extern PID_DoM_Controller pitch_pid_mtf_DoM;
 extern PID_DoM_Controller roll_pid_mtf_DoM;
+
+extern PID_DoM_Controller altitude_pid;   // PID высоты (ALT_HOLD)
 
 extern float target_angle_pitch_mtf;
 extern float target_angle_roll_mtf;
@@ -119,6 +116,7 @@ extern uint32_t mav_last_packet_time;
 /* --- Данные IMU (временная замена BMX055, будет ICM42688) --- */
 extern float imu_ax, imu_ay, imu_az;    // g
 extern float imu_gx, imu_gy, imu_gz;    // град/с
+extern float imu_temp_degc;             // °C (температура кристалла ICM42688)
 extern float imu_temp;                   // °C
 extern float32_t Ax[1];
 extern float32_t Ay[1];

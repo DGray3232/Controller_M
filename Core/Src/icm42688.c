@@ -88,27 +88,31 @@ bool ICM42688_Init(SPI_HandleTypeDef* hspi)
   * @brief  Чтение свежих данных гироскопа и акселерометра
   * @param  hspi: Указатель на обработчик SPI (SPI2)
   * @retval None
-  * @note   Читает блок 12 байт начиная с ACCEL_DATA_X1 (0x1F):
-  *         accel X/Y/Z (6 байт) + gyro X/Y/Z (6 байт).
-  *         Результат пишется в глобальные imu_ax/ay/az и imu_gx/gy/gz.
+  * @note   Читает блок 14 байт начиная с TEMP_DATA1 (0x1D):
+  *         температура (2 байта) + accel X/Y/Z (6 байт) + gyro X/Y/Z (6 байт).
+  *         Результат пишется в глобальные imu_temp_degc, imu_ax/ay/az и imu_gx/gy/gz.
   */
 void ICM42688_ReadAll(SPI_HandleTypeDef* hspi)
 {
     // tx[0] = адрес с битом чтения, остальные — dummy для приёма
-    uint8_t tx[13] = { ICM42688_REG_ACCEL_DATA_X1 | 0x80, 0 };
-    uint8_t rx[13] = { 0 };
+    uint8_t tx[15] = { ICM42688_REG_TEMP_DATA1 | 0x80, 0 };
+    uint8_t rx[15] = { 0 };
 
     ICM42688_CS_Low();
-    HAL_SPI_TransmitReceive(hspi, tx, rx, 13, HAL_MAX_DELAY);
+    HAL_SPI_TransmitReceive(hspi, tx, rx, 15, HAL_MAX_DELAY);
     ICM42688_CS_High();
 
+    // Температура кристалла [°C]
+    int16_t raw_temp = (int16_t)((rx[1] << 8) | rx[2]);
+    imu_temp_degc = (float)raw_temp * ICM42688_TEMP_SCALE + ICM42688_TEMP_OFFSET;
+
     // Сырые 16-битные значения (старший байт первым)
-    int16_t raw_ax = (int16_t)((rx[1]  << 8) | rx[2]);
-    int16_t raw_ay = (int16_t)((rx[3]  << 8) | rx[4]);
-    int16_t raw_az = (int16_t)((rx[5]  << 8) | rx[6]);
-    int16_t raw_gx = (int16_t)((rx[7]  << 8) | rx[8]);
-    int16_t raw_gy = (int16_t)((rx[9]  << 8) | rx[10]);
-    int16_t raw_gz = (int16_t)((rx[11] << 8) | rx[12]);
+    int16_t raw_ax = (int16_t)((rx[3]  << 8) | rx[4]);
+    int16_t raw_ay = (int16_t)((rx[5]  << 8) | rx[6]);
+    int16_t raw_az = (int16_t)((rx[7]  << 8) | rx[8]);
+    int16_t raw_gx = (int16_t)((rx[9]  << 8) | rx[10]);
+    int16_t raw_gy = (int16_t)((rx[11] << 8) | rx[12]);
+    int16_t raw_gz = (int16_t)((rx[13] << 8) | rx[14]);
 
     // Пересчёт в физические величины [g] и [град/с]
     imu_ax = (float)raw_ax * ICM42688_ACCEL_SENSITIVITY;

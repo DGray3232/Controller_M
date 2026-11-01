@@ -14,9 +14,9 @@
 #define BLOCK_SIZE 1 // Размер блока данных для обработки
 
 #define NUM_STAGES_GYRO_NOTCH 2
-#define NUM_STAGES_GYRO_LPF 4
+#define NUM_STAGES_GYRO_LPF 2
 #define NUM_STAGES_ACCEL_NOTCH 2
-#define NUM_STAGES_ACCEL_LPF 4
+#define NUM_STAGES_ACCEL_LPF 2
 
 /* --- Параметры FFT --- */
 #define FFT_LEN 512     // Длина FFT (должна быть степенью 2)
@@ -43,11 +43,11 @@
 #define EKF3_OF_QUALITY_MIN   25      // [0..255] ниже — кадр потока не обновляет EKF
 #define EKF3_P0_VEL           1.0f    // начальная дисперсия скорости [(м/с)²]
 #define EKF3_P0_POS           1.0f    // начальная дисперсия позиции [м²]
-#define EKF3_Q_VEL            0.01f   // немоделируемое гориз. ускорение [(м/с)²/с] — меньше = больше доверия акселу
+#define EKF3_Q_VEL            0.005f   // немоделируемое гориз. ускорение [(м/с)²/с] — меньше = больше доверия акселу
 #define EKF3_Q_POS            0.01f   // шум процесса позиции [м²/с³] (спектральная плотность)
 #define EKF3_P0_BIAS          0.25f   // начальная дисперсия смещения аксела [(м/с²)²]
 #define EKF3_Q_BIAS           1e-4f   // random walk смещения аксела [(м/с²)²/с] — медленный дрейф g·sin-протечки
-#define EKF3_R_FLOW           0.002f  // шум измерения потока [(м/с)²] при идеальном качестве. Меньше = больше доверия потоку.
+#define EKF3_R_FLOW           0.001f  // шум измерения потока [(м/с)²] при идеальном качестве. Меньше = больше доверия потоку.
 #define EKF3_R_FLOW_MAX       2.0f    // потолок R при наихудшем качестве [(м/с)²]
 #define EKF3_FLOW_SIGN_X      1.0f    // ±1 — знак оси X потока (по монтажу датчика)
 #define EKF3_FLOW_SIGN_Y      1.0f    // ±1 — знак оси Y потока
@@ -55,7 +55,8 @@
 #define EKF3_ROT_SIGN_X      -1.0f    // знак ложной скорости по X от вращения (ω×h)
 #define EKF3_ROT_SIGN_Y       1.0f    // знак ложной скорости по Y от вращения (ω×h)
 #define EKF3_ROT_COMP_GAIN_X  1.0f    // множитель компенсации вращения по X (1.0 = точное ω×h; >1 = перекомпенсация → круг)
-#define EKF3_ROT_COMP_GAIN_Y  1.0f    // множитель компенсации вращения по Y
+#define EKF3_ROT_COMP_GAIN_Y  1.0f    // множитель компенсации вращения по Y (1.0 = точное ω×h; >1 = перекомпенсация → круг)
+#define EKF3_POS_CLAMP        0.5f    // [м] предел позиции (страховка от неограниченного дрейфа)
 
 /* --- Multishot и моторы --- */
 #define MULTISHOT_MIN 500
@@ -114,10 +115,10 @@
 #define INTEGRAL_LIMIT_RATE_DoM   5.0
 #define SCALE_FACTOR_RATE_DoM     1.0
 
-#define PITCH_PID_KP_MTF_DoM      0.35
-#define PITCH_PID_KI_MTF_DoM      0.12 
-#define ROLL_PID_KP_MTF_DoM       0.35
-#define ROLL_PID_KI_MTF_DoM       0.12 
+#define PITCH_PID_KP_MTF_DoM      0.08
+#define PITCH_PID_KI_MTF_DoM      0.1 
+#define ROLL_PID_KP_MTF_DoM       0.08
+#define ROLL_PID_KI_MTF_DoM       0.1 
 #if USE_EKF3
 // EKF3: контур на 1 кГц — D-компонента даёт дребезг от скачков потока, выключена.
 #define PITCH_PID_KD_MTF_DoM      0.0
@@ -129,36 +130,31 @@
 #endif
 #define ALPHA_MTF_DoM             1.0
 #define ALPHA_DERIVATIVE_MTF_DoM  0.1
-#define INTEGRAL_LIMIT_MTF_DoM    5.0
+#define INTEGRAL_LIMIT_MTF_DoM    15.0
 #define SCALE_FACTOR_MTF_DoM      1.0
 
 /* D-член от акселерометра (горизонтальное ускорение) — демпфирование скоростного контура.
  * Скорость от потока ступенчатая (random-walk), поэтому обычный D по производной скорости не работает.
  * Вместо этого берём ускорение напрямую из акселерометра (без интеграции → без накопления bias/g-протечки). */
-#define MTF_D_KD              0.08f   // KD D-члена [°/ (см/с²)] — на сколько градусов гасить наклон на 1 см/с² ускорения
+#define MTF_D_KD              0.07f   // KD D-члена [°/ (см/с²)] — демпфирование скоростного контура (гашение раскачки сноса)
 #define MTF_D_ACC_SIGN_X      1.0f    // знак горизонтального ускорения по X (калибровка: если раскачивает — инвертировать)
 #define MTF_D_ACC_SIGN_Y      1.0f    // знак горизонтального ускорения по Y
 
 /* --- Высотная модель ALT_HOLD (захват высоты, газ/стики игнорируются) --- */
 #define GROUND_DISTANCE_MM   100     // [мм] Расстояние LiDAR, ниже которого считаем «на земле» (захват высоты при входе в ALT_HOLD)
-#define ALTITUDE_HOLD_GAIN_TICKS_PER_MM  0.5f  // [тик/мм] P-регулятор высоты: тиков газа на 1 мм ошибки высоты.
-                                               // База тяги = фактическая мощность на моторах в момент включения удержания.
-                                               // Больше — жёстче держит высоту, но возможна перерегулировка/дрожь.
+#define ALTITUDE_HOLD_KP   0.4f    // [тик/мм] P: тиков газа на 1 мм ошибки высоты.
+#define ALTITUDE_HOLD_KI   0.25f   // [тик/(мм·с)] I: убирает статическую ошибку (база тяги vs реальное висение).
+#define ALTITUDE_HOLD_KD   0.20f   // [тик/(мм/с)] D (от измерения): демпфирование вертикальной скорости — меньше рывков в GUI.
+#define ALTITUDE_HOLD_ALPHA           1.0f    // фильтр выхода (1.0 = без фильтра)
+#define ALTITUDE_HOLD_ALPHA_D         0.4f   // фильтр D-члена (0..1) — сильнее сглаживаем производную
+#define ALTITUDE_HOLD_INTEGRAL_LIMIT  4000.0f // [мм·с] предел интеграла (анти-виндап); Ki·limit ≈ 200 тик макс вклада I.
+#define ALTITUDE_HOLD_SCALE           1.0f
+#define ALTITUDE_HOLD_MAX_OUTPUT      400.0f // [тик] предел выхода PID высоты (анти-виндап): база 900 + 400 = макс 1300 тик
 #define ALT_HOLD_POT_TO_MM        10.0f   // [мм/тик] смещение целевой высоты на 1 тик крестовины (pot, 0..1000)
 #define ALT_HOLD_CLIMB_RATE_MAX   200.0f  // [мм/с] предел вертикальной скорости изменения целевой высоты (плавный взлёт/посадка)
 #define ALT_HOLD_TAKEOFF_ALTITUDE 700.0f  // [мм] высота, на которую дрон взлетает с земли при входе в ALT_HOLD
-#define ALT_HOLD_TAKEOFF_THROTTLE 800.0f  // [тик] база тяги при взлёте с земли (подобрать ≈ чуть ниже тяги висения)
-#define ALT_HOLD_POS_HOLD_MIN_ALTITUDE 150.0f  // [мм] ниже этой высоты позиционный контур выключен (вертикальный взлёт)
-
-/* --- ПИД позиции (удержание точки, частота зависит от USE_EKF3) --- */
-#define POSITION_PID_KP           1.0f  // [см/с на см] P-коэфф позиции: целевая скорость на 1 см ошибки. Больше — резче возврат в точку.
-#define POSITION_PID_KI           0.06f  // [1/с] I-коэфф позиции: компенсирует постоянное снесение (дрейф).
-#if USE_EKF3
-#define POSITION_PID_KD           0.0f   // EKF3 (1 кГц): D даёт дребезг — выключен.
-#else
-#define POSITION_PID_KD           0.01f  // Старая схема (50 Гц): лёгкое демпфирование.
-#endif
-#define POSITION_INTEGRAL_LIMIT   20.0f // [см/с] Предел накопления интеграла позиции (анти-виндап).
-#define POSITION_MAX_SPEED        60.0f // [см/с] Ограничение целевой горизонтальной скорости из позиционного ПИД и от стика.
+#define ALT_HOLD_TAKEOFF_THROTTLE 850.0f  // [тик] база тяги при взлёте с земли (подобрать ≈ чуть ниже тяги висения)
+#define ALT_HOLD_POS_HOLD_MIN_ALTITUDE 150.0f  // [мм] ниже этой высоты горизонтальный контур выключен (вертикальный взлёт) — выше отрыва, чтобы не ловить взлётный рывок
+#define YAW_HOLD_KP                5.0f    // [°/с на °] P-коэффициент удержания курса (yaw) в ALT_HOLD
 
 #endif /* CONFIG_PARAM_H */

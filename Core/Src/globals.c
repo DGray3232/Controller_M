@@ -10,6 +10,7 @@ EKF3_t ekf3 = {0};
 
 float imu_ax = 0.0f, imu_ay = 0.0f, imu_az = 0.0f;
 float imu_gx = 0.0f, imu_gy = 0.0f, imu_gz = 0.0f;
+float imu_temp_degc = 25.0f;             // °C
 float imu_temp = 23.0f;
 
 PID_2_Controller pitch_pid_rate;
@@ -18,17 +19,11 @@ PID_2_Controller yaw_pid_rate;
 
 float target_altitude_mm = 0.0f;
 float hover_throttle_base = 0.0f;
+float altitude_control = 0.0f;
 float alt_hold_capture_pot = 0.0f;
 float alt_hold_capture_alt_mm = 0.0f;
 float final_throttle = 0;
-
-PID_Controller position_pid_x;
-PID_Controller position_pid_y;
-float pos_x = 0.0f;
-float pos_y = 0.0f;
-float target_pos_x = 0.0f;
-float target_pos_y = 0.0f;
-bool position_hold_active = false;
+float yaw_capture = 0.0f;
 
 MedianFilter Gyro_x = {0};
 MedianFilter Gyro_y = {0};
@@ -56,6 +51,8 @@ PID_DoM_Controller roll_pid_angle_DoM;
 
 PID_DoM_Controller pitch_pid_mtf_DoM;
 PID_DoM_Controller roll_pid_mtf_DoM;
+
+PID_DoM_Controller altitude_pid;
 
 // CMSIS-DSP фильтры
 arm_biquad_cascade_df2T_instance_f32 imu_Gx_lpf;
@@ -283,8 +280,8 @@ float32_t filterState_Ay_hpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
 float32_t filterState_Az_hpf_fft[NUM_STAGES_ACCEL_FFT * 4] = {0};
 
 float32_t Coeffs_D_Gyro_lpf[NUM_STAGES_D_GYRO_LPF * 5] = {
-      0.00080636f,   0.00161272f,   0.00080636f,   1.38761971f,  -0.49242289f,
-      1.00000000f,   2.00000003f,   0.99999999f,   1.62993553f,  -0.75304017f
+      0.04613200f,   0.09226400f,   0.04613200f,   1.30728500f,  -0.49181200f,
+      0.04613200f,   0.09226400f,   0.04613200f,   1.30728500f,  -0.49181200f
 };
 
 float32_t Coeffs_accel_lpf_fft[NUM_STAGES_ACCEL_FFT * 5] = {
@@ -298,16 +295,12 @@ float32_t Coeffs_accel_hpf_fft[NUM_STAGES_ACCEL_FFT * 5] = {
 };
 
 float32_t Coeffs_gyro_lpf[NUM_STAGES_GYRO_LPF * 5] = {
-	  0.00000066f,   0.00000134f,   0.00000068f,   1.36626238f,  -0.46945250f,
-	  1.00000000f,   1.99963659f,   1.00011210f,   1.42376174f,  -0.53129463f,
-	  1.00000000f,   1.96916257f,   0.96963251f,   1.54381368f,  -0.66041376f,
-	  1.00000000f,   2.00036345f,   0.99988794f,   1.73495293f,  -0.86598925f
+      0.06745500f,   0.13491100f,   0.06745500f,   1.14298100f,  -0.41280200f,
+      0.06745500f,   0.13491100f,   0.06745500f,   1.14298100f,  -0.41280200f
 };
-float32_t Coeffs_accel_lpf[NUM_STAGES_GYRO_LPF * 5] = {
-      0.00000000f,   0.00000001f,   0.00000000f,   1.65957621f,  -0.68950193f,
-      1.00000000f,   1.99963659f,   1.00011210f,   1.69975023f,  -0.73040038f,
-      1.00000000f,   1.96916257f,   0.96963251f,   1.77933911f,  -0.81142441f,
-      1.00000000f,   2.00036345f,   0.99988794f,   1.89528976f,  -0.92946590f
+float32_t Coeffs_accel_lpf[NUM_STAGES_ACCEL_LPF * 5] = {
+      0.02008300f,   0.04016700f,   0.02008300f,   1.56101800f,  -0.64135200f,
+      0.02008300f,   0.04016700f,   0.02008300f,   1.56101800f,  -0.64135200f
 };
 float32_t Coeffs_notch_x[NUM_STAGES_GYRO_NOTCH * 5] = {
       1.0f, 0.0f, 0.0f, 0.0f, 0.0f,

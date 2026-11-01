@@ -27,6 +27,8 @@
 #define ICM42688_REG_GYRO_CONFIG0     0x4F   // диапазон + ODR гироскопа
 #define ICM42688_REG_ACCEL_CONFIG0    0x50   // диапазон + ODR акселерометра
 #define ICM42688_REG_ACCEL_DATA_X1    0x1F   // начало блока данных (accel 6 + gyro 6)
+#define ICM42688_REG_TEMP_DATA1      0x1D   // температура кристалла (старший байт)
+#define ICM42688_REG_TEMP_DATA0      0x1E   // температура кристалла (младший байт)
 
 /* --- Значения конфигурации --- */
 #define ICM42688_WHO_AM_I_VALUE       0x47   // ожидаемое значение для ICM-42688-P
@@ -84,6 +86,8 @@
 /* --- Коэффициенты пересчёта сырых значений в физические --- */
 #define ICM42688_GYRO_SENSITIVITY     0.060976f        // 1/16.4 LSB/(°/s) при ±2000 dps
 #define ICM42688_ACCEL_SENSITIVITY    0.00048828125f   // 1/2048 LSB/g при ±16 g
+#define ICM42688_TEMP_SCALE          0.007548f        // 1/132.48 LSB/°C
+#define ICM42688_TEMP_OFFSET         25.0f            // °C
 
 /* --- Инициализация датчика --- */
 // Возвращает true при успехе (WHO_AM_I совпал)
